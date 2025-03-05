@@ -5,6 +5,7 @@ import { Mic, MicOff } from "lucide-react";
 import { FrequencySpectrum } from "./FrequencySpectrum";
 import { WaveformVisualizer } from "./WaveformVisualizer";
 import { VolumeIndicator } from "./VolumeIndicator";
+import { DetectionDisplay } from "./DetectionDisplay";
 import { useAudioAnalyzer } from "@/hooks/useAudioAnalyzer";
 
 export function AudioAnalyzer() {
@@ -13,6 +14,8 @@ export function AudioAnalyzer() {
     frequencyData, 
     timeData, 
     volume,
+    soundCannonResult,
+    voiceToSkullResult,
     startAnalyzing, 
     stopAnalyzing,
     error 
@@ -52,6 +55,12 @@ export function AudioAnalyzer() {
           <p className="text-destructive">{error}</p>
         )}
       </div>
+
+      <DetectionDisplay
+        soundCannonResult={soundCannonResult}
+        voiceToSkullResult={voiceToSkullResult}
+        isActive={isAnalyzing}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
