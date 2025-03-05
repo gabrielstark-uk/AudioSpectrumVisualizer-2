@@ -18,6 +18,7 @@ export function useAudioAnalyzer() {
   const sourceRef = useRef<MediaStreamAudioSourceNode>();
   const animationFrameRef = useRef<number>();
   const lastV2KDetectionRef = useRef<number>(0);
+  const lastSoundCannonDetectionRef = useRef<number>(0);
 
   const cleanup = () => {
     if (animationFrameRef.current) {
@@ -39,16 +40,18 @@ export function useAudioAnalyzer() {
     return cleanup;
   }, []);
 
-  // Handle V2K detection and countermeasure
+  // Handle V2K and Sound Cannon detection and countermeasure
   useEffect(() => {
+    const now = Date.now();
+
+    // Handle V2K Detection
     if (voiceToSkullResult?.detected && !isCountermeasureActive) {
-      const now = Date.now();
       // Only trigger countermeasure once every 10 seconds
       if (now - lastV2KDetectionRef.current > 10000) {
         setIsCountermeasureActive(true);
         lastV2KDetectionRef.current = now;
         // Initialize the EM countermeasure with the detected frequency
-        emCountermeasure.initialize(voiceToSkullResult.frequency).then(() => {
+        emCountermeasure.initialize(voiceToSkullResult.frequency, 'v2k').then(() => {
           // Keep the countermeasure active for 5 seconds
           setTimeout(() => {
             emCountermeasure.stop();
@@ -57,7 +60,24 @@ export function useAudioAnalyzer() {
         });
       }
     }
-  }, [voiceToSkullResult?.detected]);
+
+    // Handle Sound Cannon Detection
+    if (soundCannonResult?.detected && !isCountermeasureActive) {
+      // Only trigger countermeasure once every 10 seconds
+      if (now - lastSoundCannonDetectionRef.current > 10000) {
+        setIsCountermeasureActive(true);
+        lastSoundCannonDetectionRef.current = now;
+        // Initialize the EM countermeasure with the detected frequency
+        emCountermeasure.initialize(soundCannonResult.frequency, 'soundcannon').then(() => {
+          // Keep the countermeasure active for 5 seconds
+          setTimeout(() => {
+            emCountermeasure.stop();
+            setIsCountermeasureActive(false);
+          }, 5000);
+        });
+      }
+    }
+  }, [voiceToSkullResult?.detected, soundCannonResult?.detected]);
 
   const startAnalyzing = async (): Promise<boolean> => {
     try {

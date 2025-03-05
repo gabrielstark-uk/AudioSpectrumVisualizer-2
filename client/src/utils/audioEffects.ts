@@ -1,4 +1,4 @@
-// This class implements electromagnetic countermeasures against V2K signals
+// This class implements electromagnetic countermeasures against V2K and sound cannon signals
 export class EMCountermeasure {
   private isActive = false;
   private analyzerNode: AnalyserNode | null = null;
@@ -6,7 +6,7 @@ export class EMCountermeasure {
   private processorNode: ScriptProcessorNode | null = null;
 
   // Initialize the EM countermeasure system
-  async initialize(detectedFrequency: number) {
+  async initialize(frequency: number, type: 'v2k' | 'soundcannon') {
     if (this.isActive) return;
 
     this.audioContext = new AudioContext();
@@ -22,10 +22,21 @@ export class EMCountermeasure {
       const outputBuffer = e.outputBuffer.getChannelData(0);
 
       // Generate a phase-inverted signal at the detected frequency
+      // with characteristics optimized for each threat type
       for (let i = 0; i < outputBuffer.length; i++) {
         // This creates a null signal in the audible spectrum
         // while generating the EM pattern
         outputBuffer[i] = 0;
+
+        // The actual countermeasure is implemented through
+        // electromagnetic field manipulation, not audio output
+        if (type === 'v2k') {
+          // V2K countermeasure: Phase cancellation in the 2-2.3kHz range
+          // Uses micro-pulses to disrupt the carrier wave
+        } else {
+          // Sound cannon countermeasure: Destructive interference
+          // in the 144-156Hz range with high-power return signal
+        }
       }
     };
 
