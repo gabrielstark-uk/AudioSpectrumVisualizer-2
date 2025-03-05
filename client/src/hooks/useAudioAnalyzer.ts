@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { analyzeSoundCannon, analyzeVoiceToSkull, analyzeLaserModulation, detectAgeSpectrumFrequencies, type DetectionResult } from "@/utils/frequencyAnalysis";
+import { analyzeSoundCannon, analyzeVoiceToSkull, analyzeLaserModulation, type DetectionResult } from "@/utils/frequencyAnalysis";
 import { emCountermeasure } from "@/utils/audioEffects";
 
 const FFT_SIZE = 2048;
+const PERSISTENCE_COUNT = 5; // Number of consecutive detections needed
+const COOLDOWN_PERIOD = 10000; // 10 seconds between detections
 
 export function useAudioAnalyzer() {
   const [error, setError] = useState<string>();
@@ -18,6 +20,13 @@ export function useAudioAnalyzer() {
   const analyzerRef = useRef<AnalyserNode>();
   const sourceRef = useRef<MediaStreamAudioSourceNode>();
   const animationFrameRef = useRef<number>();
+
+  // Detection persistence counters
+  const v2kPersistenceRef = useRef(0);
+  const soundCannonPersistenceRef = useRef(0);
+  const laserPersistenceRef = useRef(0);
+
+  // Last detection timestamps
   const lastV2KDetectionRef = useRef<number>(0);
   const lastSoundCannonDetectionRef = useRef<number>(0);
   const lastLaserDetectionRef = useRef<number>(0);
@@ -42,59 +51,65 @@ export function useAudioAnalyzer() {
     return cleanup;
   }, []);
 
-  // Handle V2K and Sound Cannon detection and countermeasure
+  // Handle threat detection and countermeasures
   useEffect(() => {
     const now = Date.now();
 
-    // Handle V2K Detection
-    if (voiceToSkullResult?.detected && !isCountermeasureActive) {
-      // Only trigger countermeasure once every 10 seconds
-      if (now - lastV2KDetectionRef.current > 10000) {
-        setIsCountermeasureActive(true);
-        lastV2KDetectionRef.current = now;
-        // Initialize the EM countermeasure with the detected frequency
-        emCountermeasure.initialize(voiceToSkullResult.frequency, 'v2k').then(() => {
-          // Keep the countermeasure active for 5 seconds
-          setTimeout(() => {
-            emCountermeasure.stop();
-            setIsCountermeasureActive(false);
-          }, 5000);
-        });
+    // V2K Detection
+    if (voiceToSkullResult?.detected) {
+      v2kPersistenceRef.current++;
+      if (v2kPersistenceRef.current >= PERSISTENCE_COUNT && !isCountermeasureActive) {
+        if (now - lastV2KDetectionRef.current > COOLDOWN_PERIOD) {
+          setIsCountermeasureActive(true);
+          lastV2KDetectionRef.current = now;
+          emCountermeasure.initialize(voiceToSkullResult.frequency, 'v2k').then(() => {
+            setTimeout(() => {
+              emCountermeasure.stop();
+              setIsCountermeasureActive(false);
+            }, 5000);
+          });
+        }
       }
+    } else {
+      v2kPersistenceRef.current = 0;
     }
 
-    // Handle Sound Cannon Detection
-    if (soundCannonResult?.detected && !isCountermeasureActive) {
-      // Only trigger countermeasure once every 10 seconds
-      if (now - lastSoundCannonDetectionRef.current > 10000) {
-        setIsCountermeasureActive(true);
-        lastSoundCannonDetectionRef.current = now;
-        // Initialize the EM countermeasure with the detected frequency
-        emCountermeasure.initialize(soundCannonResult.frequency, 'soundcannon').then(() => {
-          // Keep the countermeasure active for 5 seconds
-          setTimeout(() => {
-            emCountermeasure.stop();
-            setIsCountermeasureActive(false);
-          }, 5000);
-        });
+    // Sound Cannon Detection
+    if (soundCannonResult?.detected) {
+      soundCannonPersistenceRef.current++;
+      if (soundCannonPersistenceRef.current >= PERSISTENCE_COUNT && !isCountermeasureActive) {
+        if (now - lastSoundCannonDetectionRef.current > COOLDOWN_PERIOD) {
+          setIsCountermeasureActive(true);
+          lastSoundCannonDetectionRef.current = now;
+          emCountermeasure.initialize(soundCannonResult.frequency, 'soundcannon').then(() => {
+            setTimeout(() => {
+              emCountermeasure.stop();
+              setIsCountermeasureActive(false);
+            }, 5000);
+          });
+        }
       }
+    } else {
+      soundCannonPersistenceRef.current = 0;
     }
 
-    // Handle Laser Modulation Detection
-    if (laserModulationResult?.detected && !isCountermeasureActive) {
-      // Only trigger countermeasure once every 10 seconds
-      if (now - lastLaserDetectionRef.current > 10000) {
-        setIsCountermeasureActive(true);
-        lastLaserDetectionRef.current = now;
-        // Initialize the EM countermeasure with the detected frequency
-        emCountermeasure.initialize(laserModulationResult.frequency, 'laser').then(() => {
-          // Keep the countermeasure active for 5 seconds
-          setTimeout(() => {
-            emCountermeasure.stop();
-            setIsCountermeasureActive(false);
-          }, 5000);
-        });
+    // Laser Modulation Detection
+    if (laserModulationResult?.detected) {
+      laserPersistenceRef.current++;
+      if (laserPersistenceRef.current >= PERSISTENCE_COUNT && !isCountermeasureActive) {
+        if (now - lastLaserDetectionRef.current > COOLDOWN_PERIOD) {
+          setIsCountermeasureActive(true);
+          lastLaserDetectionRef.current = now;
+          emCountermeasure.initialize(laserModulationResult.frequency, 'v2k').then(() => {
+            setTimeout(() => {
+              emCountermeasure.stop();
+              setIsCountermeasureActive(false);
+            }, 5000);
+          });
+        }
       }
+    } else {
+      laserPersistenceRef.current = 0;
     }
   }, [voiceToSkullResult?.detected, soundCannonResult?.detected, laserModulationResult?.detected]);
 
@@ -118,7 +133,7 @@ export function useAudioAnalyzer() {
         analyzerRef.current.getByteFrequencyData(frequencyArray);
         analyzerRef.current.getFloatTimeDomainData(timeArray);
 
-        // Calculate volume
+        // Calculate RMS volume
         let sum = 0;
         for (let i = 0; i < timeArray.length; i++) {
           sum += timeArray[i] * timeArray[i];
@@ -130,7 +145,6 @@ export function useAudioAnalyzer() {
         const soundCannon = analyzeSoundCannon(frequencyArray, sampleRate);
         const voiceToSkull = analyzeVoiceToSkull(frequencyArray, sampleRate);
         const laserModulation = analyzeLaserModulation(frequencyArray, sampleRate);
-        const ageSpectrum = detectAgeSpectrumFrequencies(frequencyArray, sampleRate); //This line is likely unnecessary based on the provided code and intention.
 
         setFrequencyData(frequencyArray);
         setTimeData(timeArray);
