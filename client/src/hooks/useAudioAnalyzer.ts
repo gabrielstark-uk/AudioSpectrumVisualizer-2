@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { analyzeSoundCannon, analyzeVoiceToSkull, type DetectionResult } from "@/utils/frequencyAnalysis";
+import { countermeasureAudio } from "@/utils/audioEffects";
 
 const FFT_SIZE = 2048;
 
@@ -10,11 +11,13 @@ export function useAudioAnalyzer() {
   const [volume, setVolume] = useState(0);
   const [soundCannonResult, setSoundCannonResult] = useState<DetectionResult | null>(null);
   const [voiceToSkullResult, setVoiceToSkullResult] = useState<DetectionResult | null>(null);
+  const [isCountermeasureActive, setIsCountermeasureActive] = useState(false);
 
   const audioContextRef = useRef<AudioContext>();
   const analyzerRef = useRef<AnalyserNode>();
   const sourceRef = useRef<MediaStreamAudioSourceNode>();
   const animationFrameRef = useRef<number>();
+  const lastV2KDetectionRef = useRef<number>(0);
 
   const cleanup = () => {
     if (animationFrameRef.current) {
@@ -26,6 +29,7 @@ export function useAudioAnalyzer() {
     if (audioContextRef.current) {
       audioContextRef.current.close();
     }
+    countermeasureAudio.stop();
     sourceRef.current = undefined;
     analyzerRef.current = undefined;
     audioContextRef.current = undefined;
@@ -34,6 +38,21 @@ export function useAudioAnalyzer() {
   useEffect(() => {
     return cleanup;
   }, []);
+
+  // Handle V2K detection and countermeasure
+  useEffect(() => {
+    if (voiceToSkullResult?.detected && !isCountermeasureActive) {
+      const now = Date.now();
+      // Only trigger countermeasure once every 10 seconds
+      if (now - lastV2KDetectionRef.current > 10000) {
+        setIsCountermeasureActive(true);
+        lastV2KDetectionRef.current = now;
+        countermeasureAudio.playCountermeasure().then(() => {
+          setIsCountermeasureActive(false);
+        });
+      }
+    }
+  }, [voiceToSkullResult?.detected]);
 
   const startAnalyzing = async (): Promise<boolean> => {
     try {
@@ -103,6 +122,7 @@ export function useAudioAnalyzer() {
     error,
     soundCannonResult,
     voiceToSkullResult,
+    isCountermeasureActive,
     startAnalyzing,
     stopAnalyzing
   };
