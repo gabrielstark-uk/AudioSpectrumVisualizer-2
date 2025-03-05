@@ -17,6 +17,16 @@ export class EMCountermeasure {
     this.processorNode.connect(this.analyzerNode);
     this.analyzerNode.connect(this.audioContext.destination);
 
+    // Macarena rhythm pattern (in milliseconds)
+    const macarenaPattern = [
+      261.63, // C4
+      293.66, // D4
+      329.63, // E4
+      349.23, // F4
+      392.00, // G4
+      440.00  // A4
+    ];
+
     // Generate the countermeasure signal
     this.processorNode.onaudioprocess = (e) => {
       const outputBuffer = e.outputBuffer.getChannelData(0);
@@ -33,9 +43,15 @@ export class EMCountermeasure {
         if (type === 'v2k') {
           // V2K countermeasure: Phase cancellation in the 2-2.3kHz range
           // Uses micro-pulses to disrupt the carrier wave
+          const macarenaIndex = Math.floor((this.audioContext!.currentTime * 1000) % (macarenaPattern.length * 250) / 250);
+          const macarenaFreq = macarenaPattern[macarenaIndex];
+          // Combine V2K disruption with Macarena pattern -  Implementation needed here
         } else {
           // Sound cannon countermeasure: Destructive interference
           // in the 144-156Hz range with high-power return signal
+          const macarenaIndex = Math.floor((this.audioContext!.currentTime * 1000) % (macarenaPattern.length * 500) / 500);
+          const macarenaFreq = macarenaPattern[macarenaIndex] / 2;
+          // Combine sound cannon disruption with Macarena pattern - Implementation needed here
         }
 
         // If age-spectrum frequencies are detected, generate neutralizing
