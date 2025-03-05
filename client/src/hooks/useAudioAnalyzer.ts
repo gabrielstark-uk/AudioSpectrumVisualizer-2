@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { analyzeSoundCannon, analyzeVoiceToSkull, type DetectionResult } from "@/utils/frequencyAnalysis";
-import { countermeasureAudio } from "@/utils/audioEffects";
+import { emCountermeasure } from "@/utils/audioEffects";
 
 const FFT_SIZE = 2048;
 
@@ -29,7 +29,7 @@ export function useAudioAnalyzer() {
     if (audioContextRef.current) {
       audioContextRef.current.close();
     }
-    countermeasureAudio.stop();
+    emCountermeasure.stop();
     sourceRef.current = undefined;
     analyzerRef.current = undefined;
     audioContextRef.current = undefined;
@@ -47,8 +47,13 @@ export function useAudioAnalyzer() {
       if (now - lastV2KDetectionRef.current > 10000) {
         setIsCountermeasureActive(true);
         lastV2KDetectionRef.current = now;
-        countermeasureAudio.playCountermeasure().then(() => {
-          setIsCountermeasureActive(false);
+        // Initialize the EM countermeasure with the detected frequency
+        emCountermeasure.initialize(voiceToSkullResult.frequency).then(() => {
+          // Keep the countermeasure active for 5 seconds
+          setTimeout(() => {
+            emCountermeasure.stop();
+            setIsCountermeasureActive(false);
+          }, 5000);
         });
       }
     }
