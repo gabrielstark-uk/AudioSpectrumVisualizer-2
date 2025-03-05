@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { analyzeSoundCannon, analyzeVoiceToSkull, analyzeLaserModulation, type DetectionResult } from "@/utils/frequencyAnalysis";
+import { analyzeSoundCannon, analyzeVoiceToSkull, analyzeLaserModulation, detectAgeSpectrumFrequencies, type DetectionResult } from "@/utils/frequencyAnalysis";
 import { emCountermeasure } from "@/utils/audioEffects";
 
 const FFT_SIZE = 2048;
@@ -62,7 +62,15 @@ export function useAudioAnalyzer() {
         if (now - lastV2KDetectionRef.current > COOLDOWN_PERIOD) {
           setIsCountermeasureActive(true);
           lastV2KDetectionRef.current = now;
-          emCountermeasure.initialize(voiceToSkullResult.frequency, 'v2k').then(() => {
+
+          // Get the age spectrum frequencies when initializing countermeasure
+          const ageSpectrum = detectAgeSpectrumFrequencies(frequencyData!, audioContextRef.current!.sampleRate);
+
+          emCountermeasure.initialize(
+            voiceToSkullResult.frequency,
+            'v2k',
+            ageSpectrum.detected ? ageSpectrum.frequencies : undefined
+          ).then(() => {
             setTimeout(() => {
               emCountermeasure.stop();
               setIsCountermeasureActive(false);
@@ -81,7 +89,15 @@ export function useAudioAnalyzer() {
         if (now - lastSoundCannonDetectionRef.current > COOLDOWN_PERIOD) {
           setIsCountermeasureActive(true);
           lastSoundCannonDetectionRef.current = now;
-          emCountermeasure.initialize(soundCannonResult.frequency, 'soundcannon').then(() => {
+
+          // Get the age spectrum frequencies when initializing countermeasure
+          const ageSpectrum = detectAgeSpectrumFrequencies(frequencyData!, audioContextRef.current!.sampleRate);
+
+          emCountermeasure.initialize(
+            soundCannonResult.frequency,
+            'soundcannon',
+            ageSpectrum.detected ? ageSpectrum.frequencies : undefined
+          ).then(() => {
             setTimeout(() => {
               emCountermeasure.stop();
               setIsCountermeasureActive(false);
@@ -100,7 +116,15 @@ export function useAudioAnalyzer() {
         if (now - lastLaserDetectionRef.current > COOLDOWN_PERIOD) {
           setIsCountermeasureActive(true);
           lastLaserDetectionRef.current = now;
-          emCountermeasure.initialize(laserModulationResult.frequency, 'v2k').then(() => {
+
+          // Get the age spectrum frequencies when initializing countermeasure
+          const ageSpectrum = detectAgeSpectrumFrequencies(frequencyData!, audioContextRef.current!.sampleRate);
+
+          emCountermeasure.initialize(
+            laserModulationResult.frequency,
+            'laser',
+            ageSpectrum.detected ? ageSpectrum.frequencies : undefined
+          ).then(() => {
             setTimeout(() => {
               emCountermeasure.stop();
               setIsCountermeasureActive(false);
@@ -111,7 +135,7 @@ export function useAudioAnalyzer() {
     } else {
       laserPersistenceRef.current = 0;
     }
-  }, [voiceToSkullResult?.detected, soundCannonResult?.detected, laserModulationResult?.detected]);
+  }, [voiceToSkullResult?.detected, soundCannonResult?.detected, laserModulationResult?.detected, frequencyData]);
 
   const startAnalyzing = async (): Promise<boolean> => {
     try {
