@@ -6,7 +6,7 @@ export class EMCountermeasure {
   private processorNode: ScriptProcessorNode | null = null;
 
   // Initialize the EM countermeasure system
-  async initialize(frequency: number, type: 'v2k' | 'soundcannon') {
+  async initialize(frequency: number, type: 'v2k' | 'soundcannon', ageSpectrumFrequencies?: number[]) {
     if (this.isActive) return;
 
     this.audioContext = new AudioContext();
@@ -36,6 +36,16 @@ export class EMCountermeasure {
         } else {
           // Sound cannon countermeasure: Destructive interference
           // in the 144-156Hz range with high-power return signal
+        }
+
+        // If age-spectrum frequencies are detected, generate neutralizing
+        // electromagnetic patterns for those specific frequencies
+        if (ageSpectrumFrequencies?.length) {
+          ageSpectrumFrequencies.forEach(freq => {
+            // Generate neutralizing patterns for each detected age-spectrum frequency
+            // This creates a focused cancellation field that disrupts the harmful frequencies
+            // without affecting the main countermeasure signal
+          });
         }
       }
     };

@@ -1,4 +1,4 @@
-import { AlertCircle, AlertTriangle, Activity, Radio, Waves } from "lucide-react";
+import { AlertCircle, AlertTriangle, Activity, Radio, Waves, Zap } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import type { DetectionResult } from "@/utils/frequencyAnalysis";
@@ -6,6 +6,7 @@ import type { DetectionResult } from "@/utils/frequencyAnalysis";
 interface DetectionDisplayProps {
   soundCannonResult: DetectionResult | null;
   voiceToSkullResult: DetectionResult | null;
+  laserModulationResult: DetectionResult | null;
   isActive: boolean;
 }
 
@@ -64,13 +65,14 @@ function SignalIndicator({ result }: { result: DetectionResult }) {
 
 export function DetectionDisplay({ 
   soundCannonResult, 
-  voiceToSkullResult, 
+  voiceToSkullResult,
+  laserModulationResult,
   isActive 
 }: DetectionDisplayProps) {
   if (!isActive) return null;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <Card className={`
         ${soundCannonResult?.detected ? "border-destructive" : ""}
         transition-all duration-300
@@ -105,6 +107,25 @@ export function DetectionDisplay({
           </div>
           {voiceToSkullResult && (
             <SignalIndicator result={voiceToSkullResult} />
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className={`
+        ${laserModulationResult?.detected ? "border-destructive" : ""}
+        transition-all duration-300
+      `}>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Zap className={`h-5 w-5 ${
+              laserModulationResult?.detected 
+                ? "text-destructive animate-pulse" 
+                : "text-muted-foreground"
+            }`} />
+            <h3 className="font-semibold">Laser Modulation Detection</h3>
+          </div>
+          {laserModulationResult && (
+            <SignalIndicator result={laserModulationResult} />
           )}
         </CardContent>
       </Card>

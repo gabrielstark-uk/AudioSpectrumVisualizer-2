@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { analyzeSoundCannon, analyzeVoiceToSkull, type DetectionResult } from "@/utils/frequencyAnalysis";
+import { analyzeSoundCannon, analyzeVoiceToSkull, analyzeLaserModulation, detectAgeSpectrumFrequencies, type DetectionResult } from "@/utils/frequencyAnalysis";
 import { emCountermeasure } from "@/utils/audioEffects";
 
 const FFT_SIZE = 2048;
@@ -11,6 +11,7 @@ export function useAudioAnalyzer() {
   const [volume, setVolume] = useState(0);
   const [soundCannonResult, setSoundCannonResult] = useState<DetectionResult | null>(null);
   const [voiceToSkullResult, setVoiceToSkullResult] = useState<DetectionResult | null>(null);
+  const [laserModulationResult, setLaserModulationResult] = useState<DetectionResult | null>(null);
   const [isCountermeasureActive, setIsCountermeasureActive] = useState(false);
 
   const audioContextRef = useRef<AudioContext>();
@@ -19,6 +20,7 @@ export function useAudioAnalyzer() {
   const animationFrameRef = useRef<number>();
   const lastV2KDetectionRef = useRef<number>(0);
   const lastSoundCannonDetectionRef = useRef<number>(0);
+  const lastLaserDetectionRef = useRef<number>(0);
 
   const cleanup = () => {
     if (animationFrameRef.current) {
@@ -77,7 +79,24 @@ export function useAudioAnalyzer() {
         });
       }
     }
-  }, [voiceToSkullResult?.detected, soundCannonResult?.detected]);
+
+    // Handle Laser Modulation Detection
+    if (laserModulationResult?.detected && !isCountermeasureActive) {
+      // Only trigger countermeasure once every 10 seconds
+      if (now - lastLaserDetectionRef.current > 10000) {
+        setIsCountermeasureActive(true);
+        lastLaserDetectionRef.current = now;
+        // Initialize the EM countermeasure with the detected frequency
+        emCountermeasure.initialize(laserModulationResult.frequency, 'laser').then(() => {
+          // Keep the countermeasure active for 5 seconds
+          setTimeout(() => {
+            emCountermeasure.stop();
+            setIsCountermeasureActive(false);
+          }, 5000);
+        });
+      }
+    }
+  }, [voiceToSkullResult?.detected, soundCannonResult?.detected, laserModulationResult?.detected]);
 
   const startAnalyzing = async (): Promise<boolean> => {
     try {
@@ -110,12 +129,15 @@ export function useAudioAnalyzer() {
         const sampleRate = audioContextRef.current!.sampleRate;
         const soundCannon = analyzeSoundCannon(frequencyArray, sampleRate);
         const voiceToSkull = analyzeVoiceToSkull(frequencyArray, sampleRate);
+        const laserModulation = analyzeLaserModulation(frequencyArray, sampleRate);
+        const ageSpectrum = detectAgeSpectrumFrequencies(frequencyArray, sampleRate); //This line is likely unnecessary based on the provided code and intention.
 
         setFrequencyData(frequencyArray);
         setTimeData(timeArray);
         setVolume(rms);
         setSoundCannonResult(soundCannon);
         setVoiceToSkullResult(voiceToSkull);
+        setLaserModulationResult(laserModulation);
 
         animationFrameRef.current = requestAnimationFrame(analyze);
       };
@@ -137,6 +159,7 @@ export function useAudioAnalyzer() {
     setVolume(0);
     setSoundCannonResult(null);
     setVoiceToSkullResult(null);
+    setLaserModulationResult(null);
     setError(undefined);
   };
 
@@ -147,6 +170,7 @@ export function useAudioAnalyzer() {
     error,
     soundCannonResult,
     voiceToSkullResult,
+    laserModulationResult,
     isCountermeasureActive,
     startAnalyzing,
     stopAnalyzing

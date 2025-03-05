@@ -16,6 +16,7 @@ export function AudioAnalyzer() {
     volume,
     soundCannonResult,
     voiceToSkullResult,
+    laserModulationResult,
     startAnalyzing, 
     stopAnalyzing,
     error 
@@ -59,6 +60,7 @@ export function AudioAnalyzer() {
       <DetectionDisplay
         soundCannonResult={soundCannonResult}
         voiceToSkullResult={voiceToSkullResult}
+        laserModulationResult={laserModulationResult}
         isActive={isAnalyzing}
       />
 
