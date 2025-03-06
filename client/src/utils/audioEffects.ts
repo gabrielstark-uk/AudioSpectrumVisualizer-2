@@ -15,7 +15,8 @@ export class EMCountermeasure {
 
     // Set up the signal processing chain
     this.processorNode.connect(this.analyzerNode);
-    this.analyzerNode.connect(this.audioContext.destination);
+    // Do not connect to destination to prevent sound output on this device
+    // this.analyzerNode.connect(this.audioContext.destination);
 
     // Macarena rhythm pattern (in milliseconds)
     const macarenaPattern = [
