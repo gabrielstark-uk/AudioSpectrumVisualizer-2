@@ -148,7 +148,7 @@ export function DetectionDisplay({
           {rfChipResult && (
             <>
               <SignalIndicator result={rfChipResult} />
-              {rfChipResult.detected && rfChipResult.confidence && (
+              {rfChipResult?.detected && rfChipResult?.confidence && (
                 <div className="mt-2">
                   <div className="flex justify-between text-xs text-muted-foreground mb-1">
                     <span>Confidence</span>
@@ -159,10 +159,10 @@ export function DetectionDisplay({
                     className={`h-2 ${rfChipResult.confidence > 0.9 ? "bg-destructive" : ""}`} 
                   />
                   <div className="mt-2 text-xs">
-                    <div><span className="font-medium">Frequency:</span> {(rfChipResult.frequency / 1000).toFixed(2)} kHz</div>
-                    <div><span className="font-medium">Pattern:</span> {rfChipResult.pattern || 'Unknown'}</div>
+                    <div><span className="font-medium">Frequency:</span> {rfChipResult?.frequency ? (rfChipResult.frequency / 1000).toFixed(2) + ' kHz' : 'Unknown'}</div>
+                    <div><span className="font-medium">Pattern:</span> {rfChipResult?.pattern || 'Unknown'}</div>
                     <div className="text-destructive animate-pulse font-medium mt-1">
-                      {rfChipResult.confidence > 0.9 ? "Controller deactivation in progress - Tracking location" : ""}
+                      {(rfChipResult?.confidence && rfChipResult.confidence > 0.9) ? "Controller deactivation in progress - Tracking location" : ""}
                     </div>
                   </div>
                 </div>

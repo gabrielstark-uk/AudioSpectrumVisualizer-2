@@ -166,44 +166,62 @@ export function useAudioAnalyzer() {
       sourceRef.current.connect(analyzerRef.current);
 
       const analyze = () => {
-        if (!analyzerRef.current) return;
+        try {
+          if (!analyzerRef.current || !audioContextRef.current) {
+            console.warn('Analyzer or AudioContext not available');
+            animationFrameRef.current = requestAnimationFrame(analyze);
+            return;
+          }
 
-        const frequencyArray = new Uint8Array(analyzerRef.current.frequencyBinCount);
-        const timeArray = new Float32Array(analyzerRef.current.frequencyBinCount);
+          const frequencyArray = new Uint8Array(analyzerRef.current.frequencyBinCount);
+          const timeArray = new Float32Array(analyzerRef.current.frequencyBinCount);
 
-        analyzerRef.current.getByteFrequencyData(frequencyArray);
-        analyzerRef.current.getFloatTimeDomainData(timeArray);
+          analyzerRef.current.getByteFrequencyData(frequencyArray);
+          analyzerRef.current.getFloatTimeDomainData(timeArray);
 
-        // Calculate RMS volume
-        let sum = 0;
-        for (let i = 0; i < timeArray.length; i++) {
-          sum += timeArray[i] * timeArray[i];
+          // Calculate RMS (volume)
+          let sum = 0;
+          for (let i = 0; i < timeArray.length; i++) {
+            const normalized = (timeArray[i] / 128) - 1;
+            sum += normalized * normalized;
+          }
+          const rms = Math.sqrt(sum / timeArray.length);
+
+          // Run detection algorithms with safety checks
+          let soundCannon = null;
+          let voiceToSkull = null;
+          let laserModulation = null;
+
+          try {
+            soundCannon = analyzeSoundCannon(frequencyArray, audioContextRef.current.sampleRate);
+            voiceToSkull = analyzeVoiceToSkull(frequencyArray, audioContextRef.current.sampleRate);
+            laserModulation = analyzeLaserModulation(frequencyArray, audioContextRef.current.sampleRate);
+          } catch (detectionError) {
+            console.error('Error in detection algorithms:', detectionError);
+          }
+
+          // ML-powered RF chip detection (async) with error handling
+          detectRFChipSignal(frequencyArray, audioContextRef.current.sampleRate)
+            .then(rfChip => {
+              if (rfChip) {
+                setRfChipResult(rfChip);
+              }
+            })
+            .catch(err => console.error('RF detection error:', err));
+
+          setFrequencyData(frequencyArray);
+          setTimeData(timeArray);
+          setVolume(rms);
+          setSoundCannonResult(soundCannon);
+          setVoiceToSkullResult(voiceToSkull);
+          setLaserModulationResult(laserModulation);
+
+          animationFrameRef.current = requestAnimationFrame(analyze);
+        } catch (error) {
+          console.error('Analysis error:', error);
+          // Continue the loop even if there's an error
+          animationFrameRef.current = requestAnimationFrame(analyze);
         }
-        const rms = Math.sqrt(sum / timeArray.length);
-
-        // Analyze for specific frequency patterns
-        const sampleRate = audioContextRef.current!.sampleRate;
-        const soundCannon = analyzeSoundCannon(frequencyArray, sampleRate);
-        const voiceToSkull = analyzeVoiceToSkull(frequencyArray, sampleRate);
-        const laserModulation = analyzeLaserModulation(frequencyArray, sampleRate);
-
-        // ML-powered RF chip detection (async)
-        detectRFChipSignal(frequencyArray, audioContextRef.current.sampleRate)
-          .then(rfChip => {
-            if (rfChip) {
-              setRfChipResult(rfChip);
-            }
-          })
-          .catch(err => console.error('RF detection error:', err));
-
-        setFrequencyData(frequencyArray);
-        setTimeData(timeArray);
-        setVolume(rms);
-        setSoundCannonResult(soundCannon);
-        setVoiceToSkullResult(voiceToSkull);
-        setLaserModulationResult(laserModulation);
-
-        animationFrameRef.current = requestAnimationFrame(analyze);
       };
 
       analyze();

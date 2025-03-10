@@ -18,6 +18,10 @@ export class RFChipDeactivator {
 
   // Deactivate the RF chip controller/initiator and report to authorities
   public async deactivateChip(detectionResult: DetectionResult): Promise<{ success: boolean; message: string }> {
+    if (!detectionResult || !detectionResult.frequency) {
+      return { success: false, message: 'Invalid detection result' };
+    }
+    
     if (this.isDeactivating) {
       return { success: false, message: 'Deactivation already in progress' };
     }
