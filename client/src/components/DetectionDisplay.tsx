@@ -7,6 +7,7 @@ interface DetectionDisplayProps {
   soundCannonResult: DetectionResult | null;
   voiceToSkullResult: DetectionResult | null;
   laserModulationResult: DetectionResult | null;
+  rfChipResult: DetectionResult | null; // Added rfChipResult
   isActive: boolean;
 }
 
@@ -67,12 +68,13 @@ export function DetectionDisplay({
   soundCannonResult, 
   voiceToSkullResult,
   laserModulationResult,
+  rfChipResult, // Added rfChipResult
   isActive 
 }: DetectionDisplayProps) {
   if (!isActive) return null;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4"> {/* Added a column for rfChipResult */}
       <Card className={`
         ${soundCannonResult?.detected ? "border-destructive" : ""}
         transition-all duration-300
@@ -126,6 +128,46 @@ export function DetectionDisplay({
           </div>
           {laserModulationResult && (
             <SignalIndicator result={laserModulationResult} />
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className={`
+        ${rfChipResult?.detected ? "border-destructive" : ""}
+        transition-all duration-300
+      `}>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Radio className={`h-5 w-5 ${
+              rfChipResult?.detected 
+                ? "text-destructive animate-pulse" 
+                : "text-muted-foreground"
+            }`} />
+            <h3 className="font-semibold">RF Chip Detection (ML-powered)</h3>
+          </div>
+          {rfChipResult && (
+            <>
+              <SignalIndicator result={rfChipResult} />
+              {rfChipResult.detected && rfChipResult.confidence && (
+                <div className="mt-2">
+                  <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                    <span>Confidence</span>
+                    <span>{Math.round(rfChipResult.confidence * 100)}%</span>
+                  </div>
+                  <Progress 
+                    value={rfChipResult.confidence * 100} 
+                    className={`h-2 ${rfChipResult.confidence > 0.9 ? "bg-destructive" : ""}`} 
+                  />
+                  <div className="mt-2 text-xs">
+                    <div><span className="font-medium">Frequency:</span> {(rfChipResult.frequency / 1000).toFixed(2)} kHz</div>
+                    <div><span className="font-medium">Pattern:</span> {rfChipResult.pattern || 'Unknown'}</div>
+                    <div className="text-destructive animate-pulse font-medium mt-1">
+                      {rfChipResult.confidence > 0.9 ? "Automatic deactivation in progress" : ""}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
