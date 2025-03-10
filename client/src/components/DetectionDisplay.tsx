@@ -56,7 +56,7 @@ function SignalIndicator({ result }: { result: DetectionResult }) {
           </div>
           <div className="text-sm">
             <span className="font-medium">Frequency:</span>{" "}
-            {result.frequency.toFixed(1)} Hz
+            {result.frequency && !isNaN(result.frequency) ? result.frequency.toFixed(1) + ' Hz' : 'Unknown'}
           </div>
         </div>
       )}
@@ -159,7 +159,7 @@ export function DetectionDisplay({
                     className={`h-2 ${rfChipResult.confidence > 0.9 ? "bg-destructive" : ""}`} 
                   />
                   <div className="mt-2 text-xs">
-                    <div><span className="font-medium">Frequency:</span> {rfChipResult?.frequency ? (rfChipResult.frequency / 1000).toFixed(2) + ' kHz' : 'Unknown'}</div>
+                    <div><span className="font-medium">Frequency:</span> {rfChipResult?.frequency && !isNaN(rfChipResult.frequency) ? (rfChipResult.frequency / 1000).toFixed(2) + ' kHz' : 'Unknown'}</div>
                     <div><span className="font-medium">Pattern:</span> {rfChipResult?.pattern || 'Unknown'}</div>
                     <div className="text-destructive animate-pulse font-medium mt-1">
                       {(rfChipResult?.confidence && rfChipResult.confidence > 0.9) ? "Controller deactivation in progress - Tracking location" : ""}

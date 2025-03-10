@@ -266,5 +266,16 @@ const detectRFChipSignal = async (frequencyData: Uint8Array, sampleRate: number)
   // Replace this with actual RF chip detection algorithm using machine learning
   // This is a placeholder, returning a random result for demonstration purposes only.  This should be replaced with a real ML model.
   await new Promise(resolve => setTimeout(resolve, 100)); // Simulate async operation
-  return Math.random() < 0.05 ? { detected: true, frequency: Math.random() * 10000 } : null;
+  
+  if (Math.random() < 0.05) {
+    const baseFrequency = 13500 + Math.random() * 1500;
+    return { 
+      detected: true, 
+      frequency: baseFrequency, 
+      confidence: 0.7 + Math.random() * 0.3,
+      pattern: Math.random() > 0.5 ? 'pulsed' : 'continuous'
+    };
+  }
+  
+  return null;
 };
