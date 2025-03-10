@@ -59,62 +59,51 @@ export class RFChipDeactivator {
   
   // Triangulate the location of the RF chip controller
   private async triangulateControllerLocation(detectionResult: DetectionResult): Promise<{ latitude: number; longitude: number; accuracy: number }> {
-    // In a real implementation, this would use signal strength, direction finding,
-    // and potentially multiple receiver inputs to locate the controller
+    // Get current location as a starting point
+    const position = await this.getCurrentPosition();
     
-    // For demonstration purposes, we'll simulate finding a location near the detector
-    // but with some random offset to represent the controller's position
-    try {
-      const position = await this.getCurrentPosition();
-      
-      // Add slight offset to simulate controller being nearby but at a different location
-      // In reality, this would be determined through RF direction finding techniques
-      return {
-        latitude: position.coords.latitude + (Math.random() * 0.01 - 0.005),
-        longitude: position.coords.longitude + (Math.random() * 0.01 - 0.005),
-        accuracy: Math.random() * 50 + 10 // Accuracy in meters
-      };
-    } catch (error) {
-      console.warn('Could not triangulate controller location:', error);
-      throw new Error('Controller location triangulation failed');
-    }
+    // In a real implementation, this would use multiple signal sources
+    // to triangulate the exact location of the RF controller
+    
+    // For simulation, we'll return a location slightly offset from current position
+    return {
+      latitude: position.coords.latitude + (Math.random() * 0.01 - 0.005),
+      longitude: position.coords.longitude + (Math.random() * 0.01 - 0.005),
+      accuracy: Math.random() * 100 + 50 // 50-150m accuracy
+    };
   }
-
-  // Submit report to law enforcement
+  
+  // Report the detected RF chip controller to authorities
   private async reportToAuthorities(
     detectionResult: DetectionResult, 
-    controllerLocation?: { latitude: number; longitude: number; accuracy: number }
+    controllerLocation: { latitude: number; longitude: number; accuracy: number }
   ) {
-    // Gather detector device information
+    console.log('RF chip detected! Reporting to law enforcement...');
+    
+    // Get detector's current location
+    const position = await this.getCurrentPosition();
+    const detectorLocation = {
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude
+    };
+    
+    // Collect device information for both detector and controller
     const detectorDeviceInfo = {
       userAgent: navigator.userAgent,
       platform: navigator.platform,
-      vendor: navigator.vendor,
-      deviceType: 'detector'
+      deviceMemory: (navigator as any).deviceMemory || 'unknown',
+      hardwareConcurrency: navigator.hardwareConcurrency,
+      connectionType: (navigator as any).connection?.type || 'unknown'
     };
-
-    // Get detector geolocation if available
-    let detectorLocation = undefined;
-    try {
-      const position = await this.getCurrentPosition();
-      detectorLocation = {
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude
-      };
-    } catch (error) {
-      console.warn('Could not retrieve detector location:', error);
-    }
     
-    // Gather controller device information based on signal analysis
+    // Identify controller device type
     const controllerDeviceInfo = {
-      signalStrength: Math.round(detectionResult.confidence * 100) || 80,
-      estimatedRange: Math.round(Math.random() * 100) + 10, // meters
-      frequencyBand: `${(detectionResult.frequency / 1000).toFixed(2)} kHz`,
-      modulationType: detectionResult.pattern || 'Unknown',
-      estimatedDeviceType: this.identifyControllerType(detectionResult),
-      deviceType: 'controller'
+      type: this.identifyControllerType(detectionResult),
+      estimatedRange: `${Math.round(controllerLocation.accuracy)}m`,
+      signalStrength: detectionResult.signalStrength || 0,
+      batteryEstimate: 'Unknown'
     };
-
+    
     // Prepare the report with both detector and controller information
     const report = {
       timestamp: new Date().toISOString(),
@@ -147,6 +136,17 @@ export class RFChipDeactivator {
   private getCurrentPosition(): Promise<GeolocationPosition> {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
+        reject(new Error('Geolocation is not supported by this browser'));
+        return;
+      }
+      
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+      });
+    });
+  }
 
   // Identify the type of controller based on signal characteristics
   private identifyControllerType(detectionResult: DetectionResult): string {
@@ -165,18 +165,6 @@ export class RFChipDeactivator {
     } else {
       return 'Commercial-Grade RF Controller';
     }
-  }
-
-        reject(new Error('Geolocation is not supported by this browser'));
-        return;
-      }
-      
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 0
-      });
-    });
   }
 }
 
