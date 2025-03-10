@@ -181,3 +181,13 @@ export class RFChipDeactivator {
 }
 
 export default RFChipDeactivator.getInstance();
+export function deactivateRFChip(frequency: number): Promise<boolean> {
+  // Simulated deactivation function
+  return new Promise((resolve) => {
+    console.log(`Attempting to deactivate RF chip at ${frequency}Hz...`);
+    // Simulate processing time
+    setTimeout(() => {
+      resolve(true);
+    }, 2000);
+  });
+}
