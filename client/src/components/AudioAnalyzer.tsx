@@ -17,6 +17,7 @@ export function AudioAnalyzer() {
     soundCannonResult,
     voiceToSkullResult,
     laserModulationResult,
+    rfChipResult,
     startAnalyzing, 
     stopAnalyzing,
     error 
@@ -61,6 +62,7 @@ export function AudioAnalyzer() {
         soundCannonResult={soundCannonResult}
         voiceToSkullResult={voiceToSkullResult}
         laserModulationResult={laserModulationResult}
+        rfChipResult={rfChipResult}
         isActive={isAnalyzing}
       />
 

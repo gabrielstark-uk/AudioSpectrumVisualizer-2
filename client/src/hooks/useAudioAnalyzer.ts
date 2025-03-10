@@ -14,6 +14,7 @@ export function useAudioAnalyzer() {
   const [soundCannonResult, setSoundCannonResult] = useState<DetectionResult | null>(null);
   const [voiceToSkullResult, setVoiceToSkullResult] = useState<DetectionResult | null>(null);
   const [laserModulationResult, setLaserModulationResult] = useState<DetectionResult | null>(null);
+  const [rfChipResult, setRfChipResult] = useState<DetectionResult | null>(null); // Added RF chip detection state
   const [isCountermeasureActive, setIsCountermeasureActive] = useState(false);
 
   const audioContextRef = useRef<AudioContext>();
@@ -21,15 +22,17 @@ export function useAudioAnalyzer() {
   const sourceRef = useRef<MediaStreamAudioSourceNode>();
   const animationFrameRef = useRef<number>();
 
-  // Detection persistence counters
-  const v2kPersistenceRef = useRef(0);
+  // Persistence counters
   const soundCannonPersistenceRef = useRef(0);
+  const v2kPersistenceRef = useRef(0);
   const laserPersistenceRef = useRef(0);
+  const rfChipPersistenceRef = useRef(0); // Added RF chip persistence counter
 
-  // Last detection timestamps
-  const lastV2KDetectionRef = useRef<number>(0);
+  // Last detection times
   const lastSoundCannonDetectionRef = useRef<number>(0);
+  const lastV2KDetectionRef = useRef<number>(0);
   const lastLaserDetectionRef = useRef<number>(0);
+  const lastRfChipDetectionRef = useRef<number>(0); // Added RF chip last detection time
 
   const cleanup = () => {
     if (animationFrameRef.current) {
@@ -135,7 +138,21 @@ export function useAudioAnalyzer() {
     } else {
       laserPersistenceRef.current = 0;
     }
-  }, [voiceToSkullResult?.detected, soundCannonResult?.detected, laserModulationResult?.detected, frequencyData]);
+
+    // RF Chip Detection (Placeholder)
+    if (rfChipResult?.detected) {
+      rfChipPersistenceRef.current++;
+      if (rfChipPersistenceRef.current >= PERSISTENCE_COUNT && !isCountermeasureActive) {
+        if (now - lastRfChipDetectionRef.current > COOLDOWN_PERIOD) {
+          // Placeholder for RF chip reporting to law enforcement
+          console.log("RF chip detected! Reporting to law enforcement...");
+          lastRfChipDetectionRef.current = now;
+        }
+      }
+    } else {
+      rfChipPersistenceRef.current = 0;
+    }
+  }, [voiceToSkullResult?.detected, soundCannonResult?.detected, laserModulationResult?.detected, rfChipResult?.detected, frequencyData]);
 
   const startAnalyzing = async (): Promise<boolean> => {
     try {
@@ -169,6 +186,7 @@ export function useAudioAnalyzer() {
         const soundCannon = analyzeSoundCannon(frequencyArray, sampleRate);
         const voiceToSkull = analyzeVoiceToSkull(frequencyArray, sampleRate);
         const laserModulation = analyzeLaserModulation(frequencyArray, sampleRate);
+        const rfChip = detectRFChipSignal(frequencyArray, sampleRate); // Placeholder function call
 
         setFrequencyData(frequencyArray);
         setTimeData(timeArray);
@@ -176,6 +194,7 @@ export function useAudioAnalyzer() {
         setSoundCannonResult(soundCannon);
         setVoiceToSkullResult(voiceToSkull);
         setLaserModulationResult(laserModulation);
+        setRfChipResult(rfChip); // Update RF chip result
 
         animationFrameRef.current = requestAnimationFrame(analyze);
       };
@@ -198,6 +217,7 @@ export function useAudioAnalyzer() {
     setSoundCannonResult(null);
     setVoiceToSkullResult(null);
     setLaserModulationResult(null);
+    setRfChipResult(null); // Reset RF chip result
     setError(undefined);
   };
 
@@ -209,8 +229,16 @@ export function useAudioAnalyzer() {
     soundCannonResult,
     voiceToSkullResult,
     laserModulationResult,
+    rfChipResult, // Added RF chip result to return value
     isCountermeasureActive,
     startAnalyzing,
     stopAnalyzing
   };
 }
+
+// Placeholder function -  needs a proper implementation based on RF chip detection logic.
+const detectRFChipSignal = (frequencyData: Uint8Array, sampleRate: number): DetectionResult | null => {
+  // Replace this with actual RF chip detection algorithm
+  // This is a placeholder, returning a random result for demonstration purposes only.
+  return Math.random() < 0.05 ? { detected: true, frequency: Math.random() * 10000 } : null;
+};
