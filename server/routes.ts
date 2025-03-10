@@ -6,8 +6,11 @@ interface RFChipReport {
   timestamp: string;
   frequency: number;
   pattern: string;
-  location?: { latitude: number; longitude: number };
-  deviceInfo: string;
+  detectorLocation?: { latitude: number; longitude: number };
+  controllerLocation?: { latitude: number; longitude: number; accuracy: number };
+  detectorDeviceInfo: string;
+  controllerDeviceInfo: string;
+  liveTrackingEnabled: boolean;
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {

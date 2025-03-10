@@ -162,7 +162,7 @@ export function DetectionDisplay({
                     <div><span className="font-medium">Frequency:</span> {(rfChipResult.frequency / 1000).toFixed(2)} kHz</div>
                     <div><span className="font-medium">Pattern:</span> {rfChipResult.pattern || 'Unknown'}</div>
                     <div className="text-destructive animate-pulse font-medium mt-1">
-                      {rfChipResult.confidence > 0.9 ? "Automatic deactivation in progress" : ""}
+                      {rfChipResult.confidence > 0.9 ? "Controller deactivation in progress - Tracking location" : ""}
                     </div>
                   </div>
                 </div>
