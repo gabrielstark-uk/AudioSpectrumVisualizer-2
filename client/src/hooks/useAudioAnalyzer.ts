@@ -186,7 +186,15 @@ export function useAudioAnalyzer() {
         const soundCannon = analyzeSoundCannon(frequencyArray, sampleRate);
         const voiceToSkull = analyzeVoiceToSkull(frequencyArray, sampleRate);
         const laserModulation = analyzeLaserModulation(frequencyArray, sampleRate);
-        const rfChip = detectRFChipSignal(frequencyArray, sampleRate); // Placeholder function call
+
+        // ML-powered RF chip detection (async)
+        detectRFChipSignal(frequencyArray, audioContextRef.current.sampleRate)
+          .then(rfChip => {
+            if (rfChip) {
+              setRfChipResult(rfChip);
+            }
+          })
+          .catch(err => console.error('RF detection error:', err));
 
         setFrequencyData(frequencyArray);
         setTimeData(timeArray);
@@ -194,7 +202,6 @@ export function useAudioAnalyzer() {
         setSoundCannonResult(soundCannon);
         setVoiceToSkullResult(voiceToSkull);
         setLaserModulationResult(laserModulation);
-        setRfChipResult(rfChip); // Update RF chip result
 
         animationFrameRef.current = requestAnimationFrame(analyze);
       };
@@ -237,8 +244,9 @@ export function useAudioAnalyzer() {
 }
 
 // Placeholder function -  needs a proper implementation based on RF chip detection logic.
-const detectRFChipSignal = (frequencyData: Uint8Array, sampleRate: number): DetectionResult | null => {
-  // Replace this with actual RF chip detection algorithm
-  // This is a placeholder, returning a random result for demonstration purposes only.
+const detectRFChipSignal = async (frequencyData: Uint8Array, sampleRate: number): Promise<DetectionResult | null> => {
+  // Replace this with actual RF chip detection algorithm using machine learning
+  // This is a placeholder, returning a random result for demonstration purposes only.  This should be replaced with a real ML model.
+  await new Promise(resolve => setTimeout(resolve, 100)); // Simulate async operation
   return Math.random() < 0.05 ? { detected: true, frequency: Math.random() * 10000 } : null;
 };
