@@ -249,7 +249,14 @@ export default RFMlScanner.getInstance();
 import { DetectionResult } from "@/utils/frequencyAnalysis";
 
 export class RFChipDetector {
-  static detect(frequencyData: Uint8Array, sampleRate: number): DetectionResult {
+  constructor() {}
+  
+  initialize(): void {
+    console.log("RF Chip Detector initialized");
+    // Any initialization code can go here
+  }
+  
+  detect(frequencyData: Uint8Array, sampleRate: number): DetectionResult {
     // Basic implementation - you can enhance this with real detection logic
     const detected = false; // Default to not detected
     return {
