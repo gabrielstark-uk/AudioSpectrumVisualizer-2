@@ -179,7 +179,7 @@ export const useAudioAnalyzer = () => {
       // Initialize RF chip detector
       if (!rfChipDetectorRef.current) {
         rfChipDetectorRef.current = new RFChipDetector();
-        //await rfChipDetectorRef.current.initialize();  Commented out due to missing method definition
+        await rfChipDetectorRef.current.initialize();
       }
 
       // Start animation loop
