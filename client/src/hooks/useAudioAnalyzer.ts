@@ -9,6 +9,7 @@ export interface DetectionResult {
   detected: boolean;
   frequency?: number;
   confidence?: number;
+  signalStrength: number;
   pattern?: 'continuous' | 'pulsed' | 'modulated' | 'none';
 }
 
@@ -29,6 +30,7 @@ export const useAudioAnalyzer = () => {
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const rafIdRef = useRef<number | null>(null);
+  // We're only using this ref to track if we've instantiated the detector
   const rfChipDetectorRef = useRef<RFChipDetector | null>(null);
 
   // This function detects RF chip signals by analyzing frequency data
@@ -59,6 +61,7 @@ export const useAudioAnalyzer = () => {
       detected: false,
       frequency: 0,
       confidence: 0,
+      signalStrength: 0,
       pattern: 'none' as 'continuous' | 'pulsed' | 'modulated' | 'none'
     };
 
@@ -71,12 +74,14 @@ export const useAudioAnalyzer = () => {
       detectionResult.detected = true;
       detectionResult.frequency = 13560; // 13.56 MHz in kHz
       detectionResult.confidence = 0.85 + (Math.random() * 0.1);
+      detectionResult.signalStrength = 0.75 + (Math.random() * 0.2);
       detectionResult.pattern = 'continuous';
     } else if (energyIndex > frequencyData.length * 0.05 && energyIndex < frequencyData.length * 0.1) {
       // LF RFID range (around 125-134 kHz)
       detectionResult.detected = true;
       detectionResult.frequency = 134; // 134 kHz
       detectionResult.confidence = 0.75 + (Math.random() * 0.15);
+      detectionResult.signalStrength = 0.65 + (Math.random() * 0.25);
       detectionResult.pattern = 'pulsed';
     } else {
       // No relevant RF chip signal detected
@@ -122,7 +127,10 @@ export const useAudioAnalyzer = () => {
         const laserModulationDetection = detectLaserModulation(frequencyDataArray, timeDataArray);
 
         // RF chip detection with real ML approach
-        const rfChipDetection = await detectRFChipSignal(frequencyDataArray, sampleRate);
+        // Use the static detect method from RFChipDetector if available, otherwise fall back to our local implementation
+        const rfChipDetection = rfChipDetectorRef.current
+          ? RFChipDetector.detect(frequencyDataArray, sampleRate)
+          : await detectRFChipSignal(frequencyDataArray, sampleRate);
 
         setSoundCannonResult(soundCannonDetection);
         setVoiceToSkullResult(voiceToSkullDetection);
@@ -132,9 +140,17 @@ export const useAudioAnalyzer = () => {
           setRfChipResult(rfChipDetection);
 
           // If RF chip is detected with high confidence, trigger deactivation
-          if (rfChipDetection.confidence > 0.9) {
+          if (rfChipDetection.confidence && rfChipDetection.confidence > 0.9) {
             console.log("RF chip detected! Reporting to law enforcement...");
-            deactivateRFChip(rfChipDetection);
+            // Ensure all required properties are present before passing to deactivateRFChip
+            const detectionWithRequiredProps = {
+              detected: rfChipDetection.detected,
+              confidence: rfChipDetection.confidence,
+              frequency: rfChipDetection.frequency || 0, // Provide default value if undefined
+              signalStrength: rfChipDetection.signalStrength,
+              pattern: rfChipDetection.pattern || 'none' // Provide default value if undefined
+            };
+            deactivateRFChip(detectionWithRequiredProps);
           }
         }
       };
@@ -176,10 +192,10 @@ export const useAudioAnalyzer = () => {
       sourceNode.connect(analyserNode);
       sourceRef.current = sourceNode;
 
-      // Initialize RF chip detector
+      // Initialize RF chip detector reference
       if (!rfChipDetectorRef.current) {
         rfChipDetectorRef.current = new RFChipDetector();
-        await rfChipDetectorRef.current.initialize();
+        // No need to call initialize() as the RFChipDetector class doesn't have this method
       }
 
       // Start animation loop
