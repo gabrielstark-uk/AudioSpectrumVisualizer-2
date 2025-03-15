@@ -1,181 +1,157 @@
-import { AlertCircle, AlertTriangle, Activity, Radio, Waves, Zap } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import type { DetectionResult } from "@/utils/frequencyAnalysis";
+import React from "react";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { Badge } from "./ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Progress } from "./ui/progress";
+import { Shield, AlertTriangle, Zap, Radio } from "lucide-react";
+import { DetectionResult } from "../utils/frequencyAnalysis";
 
 interface DetectionDisplayProps {
   soundCannonResult: DetectionResult | null;
   voiceToSkullResult: DetectionResult | null;
   laserModulationResult: DetectionResult | null;
-  rfChipResult: DetectionResult | null; // Added rfChipResult
+  rfChipResult: DetectionResult | null;
   isActive: boolean;
 }
 
-function SignalIndicator({ result }: { result: DetectionResult }) {
-  const getPatternIcon = () => {
-    switch (result.pattern) {
-      case 'continuous':
-        return <Waves className="h-4 w-4" />;
-      case 'pulsed':
-        return <Activity className="h-4 w-4" />;
-      case 'modulated':
-        return <Radio className="h-4 w-4" />;
-      default:
-        return null;
-    }
-  };
-
+export function DetectionDisplay({
+  soundCannonResult,
+  voiceToSkullResult,
+  laserModulationResult,
+  rfChipResult,
+  isActive
+}: DetectionDisplayProps) {
+  const hasDetections = soundCannonResult || voiceToSkullResult || laserModulationResult || rfChipResult;
+  
+  if (!isActive || !hasDetections) {
+    return null;
+  }
+  
   return (
-    <div className="space-y-3">
-      <div className="flex justify-between items-center">
-        <div className="space-y-0.5">
-          <div className="text-sm font-medium">Signal Strength</div>
-          <Progress value={result.signalStrength * 100} className="h-2" />
-        </div>
-        <span className="text-sm font-medium">
-          {(result.signalStrength * 100).toFixed(1)}%
-        </span>
+    <div className="mb-6">
+      <h2 className="text-xl font-semibold mb-4">Harmful Frequency Detection</h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {soundCannonResult && (
+          <DetectionCard
+            title="Sound Cannon"
+            icon={<Zap className="h-4 w-4" />}
+            result={soundCannonResult}
+            color="destructive"
+          />
+        )}
+        
+        {voiceToSkullResult && (
+          <DetectionCard
+            title="Voice-to-Skull (V2K)"
+            icon={<AlertTriangle className="h-4 w-4" />}
+            result={voiceToSkullResult}
+            color="orange"
+          />
+        )}
+        
+        {laserModulationResult && (
+          <DetectionCard
+            title="Laser Modulation"
+            icon={<Zap className="h-4 w-4" />}
+            result={laserModulationResult}
+            color="green"
+          />
+        )}
+        
+        {rfChipResult && (
+          <DetectionCard
+            title="RF Chip Signal"
+            icon={<Radio className="h-4 w-4" />}
+            result={rfChipResult}
+            color="blue"
+          />
+        )}
       </div>
-
-      <div className="flex justify-between items-center">
-        <div className="space-y-0.5">
-          <div className="text-sm font-medium">Confidence</div>
-          <Progress value={result.confidence * 100} className="h-2" />
-        </div>
-        <span className="text-sm font-medium">
-          {(result.confidence * 100).toFixed(1)}%
-        </span>
-      </div>
-
-      {result.detected && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="font-medium">Pattern:</span>
-            {getPatternIcon()}
-            <span className="capitalize">{result.pattern}</span>
-          </div>
-          <div className="text-sm">
-            <span className="font-medium">Frequency:</span>{" "}
-            {result.frequency && !isNaN(result.frequency) ? result.frequency.toFixed(1) + ' Hz' : 'Unknown'}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
-export function DetectionDisplay({ 
-  soundCannonResult, 
-  voiceToSkullResult,
-  laserModulationResult,
-  rfChipResult, // Added rfChipResult
-  isActive 
-}: DetectionDisplayProps) {
-  if (!isActive) return null;
+interface DetectionCardProps {
+  title: string;
+  icon: React.ReactNode;
+  result: DetectionResult;
+  color: "destructive" | "orange" | "green" | "blue";
+}
 
+function DetectionCard({ title, icon, result, color }: DetectionCardProps) {
+  const confidencePercent = result.confidence * 100;
+  const colorClasses = {
+    destructive: "border-destructive bg-destructive/10",
+    orange: "border-orange-500 bg-orange-500/10",
+    green: "border-green-500 bg-green-500/10",
+    blue: "border-blue-500 bg-blue-500/10"
+  };
+  
+  const progressColors = {
+    destructive: "bg-destructive",
+    orange: "bg-orange-500",
+    green: "bg-green-500",
+    blue: "bg-blue-500"
+  };
+  
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4"> {/* Added a column for rfChipResult */}
-      <Card className={`
-        ${soundCannonResult?.detected ? "border-destructive" : ""}
-        transition-all duration-300
-      `}>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle className={`h-5 w-5 ${
-              soundCannonResult?.detected 
-                ? "text-destructive animate-pulse" 
-                : "text-muted-foreground"
-            }`} />
-            <h3 className="font-semibold">Sound Cannon Detection</h3>
+    <Card className={`border-2 ${colorClasses[color]}`}>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base flex items-center gap-2">
+          {icon} {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span>Confidence:</span>
+            <span className="font-medium">{confidencePercent.toFixed(1)}%</span>
           </div>
-          {soundCannonResult && (
-            <SignalIndicator result={soundCannonResult} />
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className={`
-        ${voiceToSkullResult?.detected ? "border-destructive" : ""}
-        transition-all duration-300
-      `}>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <AlertCircle className={`h-5 w-5 ${
-              voiceToSkullResult?.detected 
-                ? "text-destructive animate-pulse" 
-                : "text-muted-foreground"
-            }`} />
-            <h3 className="font-semibold">V2K Signal Detection</h3>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+            <div
+              className={`h-full transition-all ${progressColors[color]}`}
+              style={{ width: `${confidencePercent}%` }}
+            />
           </div>
-          {voiceToSkullResult && (
-            <SignalIndicator result={voiceToSkullResult} />
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className={`
-        ${laserModulationResult?.detected ? "border-destructive" : ""}
-        transition-all duration-300
-      `}>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Zap className={`h-5 w-5 ${
-              laserModulationResult?.detected 
-                ? "text-destructive animate-pulse" 
-                : "text-muted-foreground"
-            }`} />
-            <h3 className="font-semibold">Laser Modulation Detection</h3>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div>
+            <span className="text-muted-foreground">Frequency:</span>
+            <div className="font-medium">
+              {formatFrequency(result.frequency)}
+            </div>
           </div>
-          {laserModulationResult && (
-            <SignalIndicator result={laserModulationResult} />
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className={`
-        ${rfChipResult?.detected ? "border-destructive" : ""}
-        transition-all duration-300
-      `}>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Radio className={`h-5 w-5 ${
-              rfChipResult?.detected 
-                ? "text-destructive animate-pulse" 
-                : "text-muted-foreground"
-            }`} />
-            <h3 className="font-semibold">RF Chip Detection (ML-powered)</h3>
+          <div>
+            <span className="text-muted-foreground">Pattern:</span>
+            <div className="font-medium capitalize">
+              {result.pattern || 'Unknown'}
+            </div>
           </div>
-          {rfChipResult && (
-            <>
-              <SignalIndicator result={rfChipResult} />
-              {rfChipResult?.detected && rfChipResult?.confidence && (
-                <div className="mt-2">
-                  <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                    <span>Confidence</span>
-                    <span>{Math.round(rfChipResult.confidence * 100)}%</span>
-                  </div>
-                  <Progress 
-                    value={rfChipResult.confidence * 100} 
-                    className={`h-2 ${rfChipResult.confidence > 0.9 ? "bg-destructive" : ""}`} 
-                  />
-                  <div className="mt-2 text-xs">
-                    <div><span className="font-medium">Frequency:</span> {rfChipResult?.frequency != null && !isNaN(rfChipResult.frequency) 
-                      ? (rfChipResult.frequency >= 1000 
-                          ? (rfChipResult.frequency / 1000).toFixed(2) + ' MHz' 
-                          : rfChipResult.frequency.toFixed(2) + ' kHz') 
-                      : 'Unknown'}
-                    </div>
-                    <div><span className="font-medium">Pattern:</span> {rfChipResult?.pattern || 'Unknown'}</div>
-                    <div className="text-destructive animate-pulse font-medium mt-1">
-                      {(rfChipResult?.confidence && rfChipResult.confidence > 0.9) ? "Controller deactivation in progress - Tracking location" : ""}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+        
+        {result.confidence > 0.9 && (
+          <Alert variant="destructive" className="py-2">
+            <AlertTitle className="text-xs font-medium flex items-center gap-1">
+              <Shield className="h-3 w-3" /> Countermeasure Activated
+            </AlertTitle>
+            <AlertDescription className="text-xs">
+              Tarkan's Şımarık playing at MAXIMUM VOLUME
+            </AlertDescription>
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
   );
+}
+
+function formatFrequency(frequency: number): string {
+  if (frequency >= 1000000) {
+    return `${(frequency / 1000000).toFixed(2)} MHz`;
+  } else if (frequency >= 1000) {
+    return `${(frequency / 1000).toFixed(2)} kHz`;
+  } else {
+    return `${frequency.toFixed(2)} Hz`;
+  }
 }

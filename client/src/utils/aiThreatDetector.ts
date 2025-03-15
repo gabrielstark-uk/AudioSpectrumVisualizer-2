@@ -57,7 +57,7 @@ class AIThreatDetector {
     // Implement specific neutralization for other threat types
     console.log(`Neutralizing threat at ${detection.frequency} Hz`);
     // Simulate neutralization process
-    return new Promise(resolve => {
+    return new Promise<boolean>(resolve => {
       setTimeout(() => {
         console.log('Threat neutralized');
         resolve(true);

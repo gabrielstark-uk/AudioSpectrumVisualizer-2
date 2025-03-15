@@ -1,0 +1,15 @@
+.audio-analyzer {
+  width: 100%;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.error-message {
+  color: #ef4444;
+  font-weight: 500;
+}

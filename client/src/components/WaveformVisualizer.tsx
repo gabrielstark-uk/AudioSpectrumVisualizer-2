@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useRef, useEffect } from 'react';
 
 interface WaveformVisualizerProps {
   data: Float32Array | null;
@@ -15,12 +15,24 @@ export function WaveformVisualizer({ data, isActive }: WaveformVisualizerProps) 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    // Set canvas dimensions to match its display size
+    const updateCanvasSize = () => {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    };
+
+    // Update canvas size initially and on window resize
+    updateCanvasSize();
+    const resizeObserver = new ResizeObserver(updateCanvasSize);
+    resizeObserver.observe(canvas);
+
     const draw = () => {
       const width = canvas.width;
       const height = canvas.height;
       
       // Clear canvas
-      ctx.fillStyle = "hsl(var(--background))";
+      ctx.fillStyle = "hsl(var(--muted))";
       ctx.fillRect(0, 0, width, height);
 
       // Draw waveform
@@ -49,15 +61,21 @@ export function WaveformVisualizer({ data, isActive }: WaveformVisualizerProps) 
 
     if (isActive && data) {
       draw();
+    } else {
+      // Clear canvas when not active
+      ctx.fillStyle = "hsl(var(--muted))";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
   }, [data, isActive]);
 
   return (
     <canvas
       ref={canvasRef}
-      width={800}
-      height={200}
-      className="w-full h-[200px] bg-background rounded-lg"
+      className="w-full h-[200px] bg-muted rounded-md"
     />
   );
 }

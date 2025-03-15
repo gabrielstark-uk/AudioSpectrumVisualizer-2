@@ -28,7 +28,9 @@ export function detectSoundCannon(
   }
 
   // Convert bin index to frequency
-  const binWidth = 44100 / (frequencyData.length * 2);
+  // Use default sample rate of 44100 Hz if not available
+  const sampleRate = (window.AudioContext || (window as any).webkitAudioContext)?.sampleRate || 44100;
+  const binWidth = sampleRate / (frequencyData.length * 2);
   const detectedFrequency = peakFrequency * binWidth;
 
   // Check if frequency is within sound cannon range

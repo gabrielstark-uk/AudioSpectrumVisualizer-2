@@ -1,0 +1,77 @@
+.detection-display {
+  margin-bottom: 20px;
+}
+
+.detection-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.detection-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 15px;
+}
+
+@media (min-width: 768px) {
+  .detection-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.detection-card {
+  border: 2px solid;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: white;
+}
+
+.detection-header {
+  padding: 10px 15px;
+  color: white;
+}
+
+.detection-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.detection-content {
+  padding: 15px;
+}
+
+.detection-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.detection-label {
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.detection-value {
+  font-weight: 600;
+}
+
+.detection-alert {
+  margin-top: 10px;
+  font-weight: 600;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}

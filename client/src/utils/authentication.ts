@@ -9,6 +9,9 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const SALT_ROUNDS = 12;
 const TOKEN_EXPIRY = '1h';
 
+// Configuration
+const USERS_DB_PATH = join(__dirname, 'users.db');
+
 // User session storage
 const activeSessions = new Map<string, Session>();
 
@@ -25,21 +28,35 @@ interface Session {
   lastActivity: Date;
 }
 
+// Initialize users database
+if (!existsSync(USERS_DB_PATH)) {
+  mkdirSync(join(__dirname), { recursive: true });
+  writeFileSync(USERS_DB_PATH, JSON.stringify([]));
+}
+
 // Create a new user
 export async function createUser(username: string, password: string, role: 'user' | 'admin' = 'user'): Promise<User> {
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-  return {
+  const user: User = {
     id: uuidv4(),
     username,
     passwordHash,
     role
   };
+
+  // Save user to database
+  const users = JSON.parse(readFileSync(USERS_DB_PATH, 'utf-8'));
+  users.push(user);
+  writeFileSync(USERS_DB_PATH, JSON.stringify(users));
+
+  return user;
 }
 
 // Authenticate user
 export async function authenticate(username: string, password: string): Promise<string | null> {
   // In a real application, this would fetch from a database
-  const user = await findUserByUsername(username);
+  const users = JSON.parse(readFileSync(USERS_DB_PATH, 'utf-8'));
+  const user = users.find((u: User) => u.username === username);
   if (!user) return null;
 
   const passwordMatch = await bcrypt.compare(password, user.passwordHash);
@@ -88,8 +105,3 @@ export function checkSessionActivity(userId: string): boolean {
   return diff < 3600000; // 1 hour
 }
 
-// Find user by username (mock implementation)
-async function findUserByUsername(username: string): Promise<User | null> {
-  // In a real application, this would query a database
-  return null;
-}

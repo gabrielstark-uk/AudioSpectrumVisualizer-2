@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio Spectrum Visualizer</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f7;
+      color: #333;
+    }
+    
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .card {
+      background-color: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    button {
+      background-color: #0071e3;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    button:hover {
+      background-color: #0077ed;
+    }
+    
+    canvas {
+      width: 100%;
+      height: 200px;
+      background-color: #f0f0f0;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+    
+    .volume-bar {
+      height: 20px;
+      background-color: #f0f0f0;
+      border-radius: 10px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    
+    .volume-fill {
+      height: 100%;
+      background-color: #0071e3;
+      width: 0%;
+      transition: width 0.1s;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Audio Spectrum Visualizer</h1>
+    
+    <div class="card">
+      <button id="startButton">Start Microphone</button>
+      <p id="errorMessage" style="color: red; display: none;"></p>
+    </div>
+    
+    <div class="card">
+      <h2>Frequency Spectrum</h2>
+      <canvas id="frequencyCanvas"></canvas>
+    </div>
+    
+    <div class="card">
+      <h2>Waveform</h2>
+      <canvas id="waveformCanvas"></canvas>
+    </div>
+    
+    <div class="card">
+      <h2>Volume Level</h2>
+      <div class="volume-bar">
+        <div id="volumeFill" class="volume-fill"></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+        <span>0%</span>
+        <span id="volumePercent">0%</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // DOM elements
+    const startButton = document.getElementById('startButton');
+    const errorMessage = document.getElementById('errorMessage');
+    const frequencyCanvas = document.getElementById('frequencyCanvas');
+    const waveformCanvas = document.getElementById('waveformCanvas');
+    const volumeFill = document.getElementById('volumeFill');
+    const volumePercent = document.getElementById('volumePercent');
+    
+    // Audio context and nodes
+    let audioContext;
+    let analyser;
+    let microphone;
+    let animationId;
+    
+    // Canvas contexts
+    const freqCtx = frequencyCanvas.getContext('2d');
+    const waveCtx = waveformCanvas.getContext('2d');
+    
+    // Set canvas dimensions
+    function setupCanvas() {
+      frequencyCanvas.width = frequencyCanvas.clientWidth;
+      frequencyCanvas.height = frequencyCanvas.clientHeight;
+      
+      waveformCanvas.width = waveformCanvas.clientWidth;
+      waveformCanvas.height = waveformCanvas.clientHeight;
+    }
+    
+    // Initialize on load
+    window.addEventListener('load', setupCanvas);
+    window.addEventListener('resize', setupCanvas);
+    
+    // Start/stop audio analysis
+    startButton.addEventListener('click', async () => {
+      if (audioContext) {
+        stopAudio();
+        startButton.textContent = 'Start Microphone';
+        return;
+      }
+      
+      try {
+        await startAudio();
+        startButton.textContent = 'Stop Microphone';
+        errorMessage.style.display = 'none';
+      } catch (err) {
+        errorMessage.textContent = err.message || 'Could not access microphone';
+        errorMessage.style.display = 'block';
+      }
+    });
+    
+    async function startAudio() {
+      // Create audio context
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Get microphone stream
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // Create analyzer
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = 2048;
+      
+      // Connect microphone to analyzer
+      microphone = audioContext.createMediaStreamSource(stream);
+      microphone.connect(analyser);
+      
+      // Start visualization
+      visualize();
+    }
+    
+    function stopAudio() {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+      
+      if (microphone) {
+        microphone.disconnect();
+        microphone = null;
+      }
+      
+      if (audioContext) {
+        audioContext.close();
+        audioContext = null;
+      }
+      
+      // Reset visualizations
+      clearCanvas(freqCtx, frequencyCanvas);
+      clearCanvas(waveCtx, waveformCanvas);
+      updateVolume(0);
+    }
+    
+    function clearCanvas(ctx, canvas) {
+      ctx.fillStyle = '#f0f0f0';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    
+    function visualize() {
+      // Set up data arrays
+      const frequencyData = new Uint8Array(analyser.frequencyBinCount);
+      const timeData = new Float32Array(analyser.fftSize);
+      
+      // Animation loop
+      function loop() {
+        animationId = requestAnimationFrame(loop);
+        
+        // Get frequency data
+        analyser.getByteFrequencyData(frequencyData);
+        
+        // Get time domain data
+        analyser.getFloatTimeDomainData(timeData);
+        
+        // Calculate volume (RMS)
+        let sum = 0;
+        for (let i = 0; i < timeData.length; i++) {
+          sum += timeData[i] * timeData[i];
+        }
+        const rms = Math.sqrt(sum / timeData.length);
+        
+        // Draw visualizations
+        drawFrequencySpectrum(frequencyData);
+        drawWaveform(timeData);
+        updateVolume(rms);
+      }
+      
+      loop();
+    }
+    
+    function drawFrequencySpectrum(data) {
+      const width = frequencyCanvas.width;
+      const height = frequencyCanvas.height;
+      
+      // Clear canvas
+      freqCtx.fillStyle = '#f0f0f0';
+      freqCtx.fillRect(0, 0, width, height);
+      
+      // Draw frequency bars
+      const barWidth = width / data.length;
+      const barSpacing = Math.max(1, Math.floor(width / 1000));
+      
+      freqCtx.fillStyle = '#0071e3';
+      
+      for (let i = 0; i < data.length; i++) {
+        const percent = data[i] / 255;
+        const barHeight = height * percent;
+        const x = i * (barWidth + barSpacing);
+        const y = height - barHeight;
+        
+        freqCtx.fillRect(x, y, barWidth, barHeight);
+      }
+    }
+    
+    function drawWaveform(data) {
+      const width = waveformCanvas.width;
+      const height = waveformCanvas.height;
+      
+      // Clear canvas
+      waveCtx.fillStyle = '#f0f0f0';
+      waveCtx.fillRect(0, 0, width, height);
+      
+      // Draw waveform
+      waveCtx.beginPath();
+      waveCtx.strokeStyle = '#0071e3';
+      waveCtx.lineWidth = 2;
+      
+      const sliceWidth = width / data.length;
+      let x = 0;
+      
+      for (let i = 0; i < data.length; i++) {
+        const v = data[i];
+        const y = (v + 1) / 2 * height;
+        
+        if (i === 0) {
+          waveCtx.moveTo(x, y);
+        } else {
+          waveCtx.lineTo(x, y);
+        }
+        
+        x += sliceWidth;
+      }
+      
+      waveCtx.stroke();
+    }
+    
+    function updateVolume(volume) {
+      const volumePercentValue = Math.min(100, volume * 100);
+      volumeFill.style.width = `${volumePercentValue}%`;
+      volumePercent.textContent = `${volumePercentValue.toFixed(1)}%`;
+    }
+  </script>
+</body>
+</html>

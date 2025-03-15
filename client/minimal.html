@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio Spectrum Visualizer</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(to bottom right, #ffffff, #7e5bef);
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    
+    .card {
+      background-color: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+      animation: scale-in 0.3s ease-out;
+    }
+    
+    @keyframes scale-in {
+      0% {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    
+    button {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    button:hover {
+      transform: scale(1.05);
+    }
+    
+    button.stop {
+      background-color: #ef4444;
+    }
+    
+    canvas {
+      width: 100%;
+      height: 200px;
+      background-color: rgba(240, 240, 240, 0.5);
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+    
+    .progress-container {
+      height: 20px;
+      background-color: rgba(240, 240, 240, 0.5);
+      border-radius: 10px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    
+    .progress-bar {
+      height: 100%;
+      background-color: #3b82f6;
+      width: 0%;
+      transition: width 0.1s;
+    }
+    
+    .detection-card {
+      border-width: 2px;
+      border-style: solid;
+    }
+    
+    .detection-card.destructive {
+      border-color: #ef4444;
+      background-color: rgba(239, 68, 68, 0.1);
+    }
+    
+    .detection-card.orange {
+      border-color: #f97316;
+      background-color: rgba(249, 115, 22, 0.1);
+    }
+    
+    .detection-card.green {
+      border-color: #10b981;
+      background-color: rgba(16, 185, 129, 0.1);
+    }
+    
+    .detection-card.blue {
+      border-color: #3b82f6;
+      background-color: rgba(59, 130, 246, 0.1);
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    
+    @media (min-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // AudioAnalyzer Component
+    function AudioAnalyzer() {
+      const [isAnalyzing, setIsAnalyzing] = React.useState(false);
+      const [frequencyData, setFrequencyData] = React.useState(null);
+      const [timeData, setTimeData] = React.useState(null);
+      const [volume, setVolume] = React.useState(0);
+      const [error, setError] = React.useState(null);
+      const [detections, setDetections] = React.useState({
+        soundCannon: null,
+        voiceToSkull: null,
+        laserModulation: null,
+        rfChip: null
+      });
+      
+      const audioContextRef = React.useRef(null);
+      const analyserRef = React.useRef(null);
+      const sourceRef = React.useRef(null);
+      const streamRef = React.useRef(null);
+      const rafIdRef = React.useRef(null);
+      
+      const frequencyCanvasRef = React.useRef(null);
+      const waveformCanvasRef = React.useRef(null);
+      
+      // Set up canvas dimensions
+      React.useEffect(() => {
+        const updateCanvasSize = () => {
+          const canvases = [frequencyCanvasRef.current, waveformCanvasRef.current];
+          canvases.forEach(canvas => {
+            if (canvas) {
+              const rect = canvas.getBoundingClientRect();
+              canvas.width = rect.width;
+              canvas.height = rect.height;
+            }
+          });
+        };
+        
+        updateCanvasSize();
+        window.addEventListener('resize', updateCanvasSize);
+        
+        return () => {
+          window.removeEventListener('resize', updateCanvasSize);
+        };
+      }, []);
+      
+      // Draw frequency spectrum
+      React.useEffect(() => {
+        const canvas = frequencyCanvasRef.current;
+        if (!canvas || !frequencyData || !isAnalyzing) return;
+        
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        // Clear canvas
+        ctx.fillStyle = 'rgba(240, 240, 240, 0.5)';
+        ctx.fillRect(0, 0, width, height);
+        
+        // Draw frequency bars
+        const barWidth = width / frequencyData.length;
+        const barSpacing = Math.max(1, Math.floor(width / 1000));
+        
+        ctx.fillStyle = '#3b82f6';
+        
+        for (let i = 0; i < frequencyData.length; i++) {
+          const percent = frequencyData[i] / 255;
+          const barHeight = height * percent;
+          const x = i * (barWidth + barSpacing);
+          const y = height - barHeight;
+          
+          ctx.fillRect(x, y, barWidth, barHeight);
+        }
+      }, [frequencyData, isAnalyzing]);
+      
+      // Draw waveform
+      React.useEffect(() => {
+        const canvas = waveformCanvasRef.current;
+        if (!canvas || !timeData || !isAnalyzing) return;
+        
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        // Clear canvas
+        ctx.fillStyle = 'rgba(240, 240, 240, 0.5)';
+        ctx.fillRect(0, 0, width, height);
+        
+        // Draw waveform
+        ctx.beginPath();
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 2;
+        
+        const sliceWidth = width / timeData.length;
+        let x = 0;
+        
+        for (let i = 0; i < timeData.length; i++) {
+          const v = timeData[i];
+          const y = (v + 1) / 2 * height;
+          
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+          
+          x += sliceWidth;
+        }
+        
+        ctx.stroke();
+      }, [timeData, isAnalyzing]);
+      
+      // Audio analysis function
+      const analyzeAudio = React.useCallback(() => {
+        if (!analyserRef.current) return;
+        
+        const analyzer = analyserRef.current;
+        
+        // Get frequency data
+        const frequencyBufferLength = analyzer.frequencyBinCount;
+        const frequencyDataArray = new Uint8Array(frequencyBufferLength);
+        analyzer.getByteFrequencyData(frequencyDataArray);
+        setFrequencyData(frequencyDataArray);
+        
+        // Get time domain data
+        const timeBufferLength = analyzer.fftSize;
+        const timeDataArray = new Float32Array(timeBufferLength);
+        analyzer.getFloatTimeDomainData(timeDataArray);
+        setTimeData(timeDataArray);
+        
+        // Calculate volume (RMS)
+        let sum = 0;
+        for (let i = 0; i < timeDataArray.length; i++) {
+          sum += timeDataArray[i] * timeDataArray[i];
+        }
+        const rms = Math.sqrt(sum / timeDataArray.length);
+        setVolume(rms);
+        
+        // Simulate detections
+        simulateDetections(frequencyDataArray, timeDataArray);
+        
+        // Schedule next frame
+        rafIdRef.current = requestAnimationFrame(analyzeAudio);
+      }, []);
+      
+      // Simulate detections
+      const simulateDetections = (frequencyData, timeData) => {
+        // Get the dominant frequency
+        let maxBin = 0;
+        let maxValue = 0;
+        for (let i = 0; i < frequencyData.length; i++) {
+          if (frequencyData[i] > maxValue) {
+            maxValue = frequencyData[i];
+            maxBin = i;
+          }
+        }
+        
+        // Convert bin to frequency (assuming 44.1kHz sample rate)
+        const sampleRate = 44100;
+        const binWidth = sampleRate / (frequencyData.length * 2);
+        const dominantFreq = maxBin * binWidth;
+        
+        // Calculate signal strength
+        const signalStrength = maxValue / 255;
+        
+        // Only show detections if signal is strong enough
+        if (signalStrength > 0.3) {
+          // Sound cannon (147-153 Hz)
+          if (dominantFreq >= 147 && dominantFreq <= 153) {
+            setDetections(prev => ({
+              ...prev,
+              soundCannon: {
+                detected: true,
+                frequency: dominantFreq,
+                confidence: Math.min(1, signalStrength * 1.5),
+                signalStrength,
+                pattern: 'continuous'
+              }
+            }));
+          } else {
+            setDetections(prev => ({ ...prev, soundCannon: null }));
+          }
+          
+          // Voice to skull (2100-2200 Hz)
+          if (dominantFreq >= 2100 && dominantFreq <= 2200) {
+            setDetections(prev => ({
+              ...prev,
+              voiceToSkull: {
+                detected: true,
+                frequency: dominantFreq,
+                confidence: Math.min(1, signalStrength * 1.5),
+                signalStrength,
+                pattern: 'modulated'
+              }
+            }));
+          } else {
+            setDetections(prev => ({ ...prev, voiceToSkull: null }));
+          }
+          
+          // Laser modulation (16000-20000 Hz)
+          if (dominantFreq >= 16000 && dominantFreq <= 20000) {
+            setDetections(prev => ({
+              ...prev,
+              laserModulation: {
+                detected: true,
+                frequency: dominantFreq,
+                confidence: Math.min(1, signalStrength * 1.5),
+                signalStrength,
+                pattern: 'pulsed'
+              }
+            }));
+          } else {
+            setDetections(prev => ({ ...prev, laserModulation: null }));
+          }
+          
+          // RF Chip (random simulation)
+          if (Math.random() < 0.01) { // 1% chance of detection
+            setDetections(prev => ({
+              ...prev,
+              rfChip: {
+                detected: true,
+                frequency: 13560000, // 13.56 MHz (common RFID frequency)
+                confidence: 0.85 + (Math.random() * 0.15),
+                signalStrength: 0.7 + (Math.random() * 0.3),
+                pattern: 'pulsed'
+              }
+            }));
+          } else if (detections.rfChip) {
+            // Gradually fade out the detection
+            if (detections.rfChip.confidence > 0.1) {
+              setDetections(prev => ({
+                ...prev,
+                rfChip: {
+                  ...prev.rfChip,
+                  confidence: prev.rfChip.confidence * 0.95
+                }
+              }));
+            } else {
+              setDetections(prev => ({ ...prev, rfChip: null }));
+            }
+          }
+        } else {
+          // Reset detections if signal is weak
+          setDetections(prev => ({
+            ...prev,
+            soundCannon: null,
+            voiceToSkull: null,
+            laserModulation: null
+            // Keep RF chip detection as it has its own fade-out logic
+          }));
+        }
+      };
+      
+      // Start audio analysis
+      const startAnalyzing = async () => {
+        try {
+          // Reset error state
+          setError(null);
+          
+          // Stop any existing audio context
+          if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+            await audioContextRef.current.close();
+          }
+          
+          // Create new audio context
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          audioContextRef.current = audioContext;
+          
+          // Get microphone stream
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          streamRef.current = stream;
+          
+          // Create analyzer node
+          const analyserNode = audioContext.createAnalyser();
+          analyserNode.fftSize = 2048;
+          analyserRef.current = analyserNode;
+          
+          // Create source from microphone
+          const sourceNode = audioContext.createMediaStreamSource(stream);
+          sourceNode.connect(analyserNode);
+          sourceRef.current = sourceNode;
+          
+          // Start animation loop
+          analyzeAudio();
+          
+          setIsAnalyzing(true);
+          return true;
+        } catch (err) {
+          console.error("Error starting analyzer:", err);
+          setError(err?.message || "Could not access microphone");
+          return false;
+        }
+      };
+      
+      // Stop audio analysis
+      const stopAnalyzing = () => {
+        // Cancel animation frame
+        if (rafIdRef.current) {
+          cancelAnimationFrame(rafIdRef.current);
+          rafIdRef.current = null;
+        }
+        
+        // Stop microphone stream
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current = null;
+        }
+        
+        // Disconnect and close audio nodes
+        if (sourceRef.current) {
+          sourceRef.current.disconnect();
+          sourceRef.current = null;
+        }
+        
+        if (audioContextRef.current) {
+          audioContextRef.current.close().catch(console.error);
+          audioContextRef.current = null;
+        }
+        
+        // Reset analyzer
+        analyserRef.current = null;
+        
+        // Reset detection results
+        setDetections({
+          soundCannon: null,
+          voiceToSkull: null,
+          laserModulation: null,
+          rfChip: null
+        });
+        
+        setIsAnalyzing(false);
+      };
+      
+      // Toggle analyzing
+      const toggleAnalyzing = async () => {
+        if (isAnalyzing) {
+          stopAnalyzing();
+        } else {
+          await startAnalyzing();
+        }
+      };
+      
+      // Clean up on unmount
+      React.useEffect(() => {
+        return () => {
+          stopAnalyzing();
+        };
+      }, []);
+      
+      // Format frequency for display
+      const formatFrequency = (frequency) => {
+        if (frequency >= 1000000) {
+          return `${(frequency / 1000000).toFixed(2)} MHz`;
+        } else if (frequency >= 1000) {
+          return `${(frequency / 1000).toFixed(2)} kHz`;
+        } else {
+          return `${frequency.toFixed(2)} Hz`;
+        }
+      };
+      
+      // Check if any detections are active
+      const hasDetections = detections.soundCannon || detections.voiceToSkull || 
+                           detections.laserModulation || detections.rfChip;
+      
+      return (
+        <div className="container">
+          <h1>Audio Spectrum Visualizer</h1>
+          
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <button 
+                onClick={toggleAnalyzing}
+                className={isAnalyzing ? 'stop' : ''}
+              >
+                {isAnalyzing ? 'Stop' : 'Start'} Microphone
+              </button>
+              {error && <p style={{ color: '#ef4444' }}>{error}</p>}
+            </div>
+          </div>
+          
+          {isAnalyzing && hasDetections && (
+            <div style={{ marginBottom: '24px' }}>
+              <h2>Harmful Frequency Detection</h2>
+              
+              <div className="grid">
+                {detections.soundCannon && (
+                  <DetectionCard 
+                    title="Sound Cannon"
+                    result={detections.soundCannon}
+                    color="destructive"
+                    formatFrequency={formatFrequency}
+                  />
+                )}
+                
+                {detections.voiceToSkull && (
+                  <DetectionCard 
+                    title="Voice-to-Skull (V2K)"
+                    result={detections.voiceToSkull}
+                    color="orange"
+                    formatFrequency={formatFrequency}
+                  />
+                )}
+                
+                {detections.laserModulation && (
+                  <DetectionCard 
+                    title="Laser Modulation"
+                    result={detections.laserModulation}
+                    color="green"
+                    formatFrequency={formatFrequency}
+                  />
+                )}
+                
+                {detections.rfChip && (
+                  <DetectionCard 
+                    title="RF Chip Signal"
+                    result={detections.rfChip}
+                    color="blue"
+                    formatFrequency={formatFrequency}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+          
+          <div className="grid">
+            <div className="card">
+              <h2>Frequency Spectrum</h2>
+              <canvas ref={frequencyCanvasRef} />
+            </div>
+            
+            <div className="card">
+              <h2>Waveform</h2>
+              <canvas ref={waveformCanvasRef} />
+            </div>
+          </div>
+          
+          <div className="card">
+            <h2>Volume Level</h2>
+            <div className="progress-container">
+              <div 
+                className="progress-bar"
+                style={{ width: `${isAnalyzing ? Math.min(100, volume * 100) : 0}%` }}
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+              <span>0%</span>
+              <span>{(volume * 100).toFixed(1)}%</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    // Detection Card Component
+    function DetectionCard({ title, result, color, formatFrequency }) {
+      const confidencePercent = result.confidence * 100;
+      
+      return (
+        <div className={`card detection-card ${color}`}>
+          <h3 style={{ marginTop: 0 }}>{title}</h3>
+          
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Confidence:</span>
+              <span>{confidencePercent.toFixed(1)}%</span>
+            </div>
+            <div className="progress-container">
+              <div 
+                className="progress-bar"
+                style={{ width: `${confidencePercent}%` }}
+              />
+            </div>
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div>
+              <span style={{ opacity: 0.7 }}>Frequency:</span>
+              <div>{formatFrequency(result.frequency)}</div>
+            </div>
+            <div>
+              <span style={{ opacity: 0.7 }}>Pattern:</span>
+              <div style={{ textTransform: 'capitalize' }}>{result.pattern || 'Unknown'}</div>
+            </div>
+          </div>
+          
+          {result.confidence > 0.9 && (
+            <div style={{ 
+              marginTop: '16px', 
+              padding: '8px', 
+              backgroundColor: 'rgba(239, 68, 68, 0.1)', 
+              borderRadius: '4px',
+              borderLeft: '4px solid #ef4444'
+            }}>
+              <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
+                Countermeasure Activated
+              </div>
+              <div style={{ fontSize: '14px' }}>
+                Tarkan's Şımarık playing at MAXIMUM VOLUME
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+    
+    // Render the app
+    ReactDOM.createRoot(document.getElementById('root')).render(
+      <React.StrictMode>
+        <AudioAnalyzer />
+      </React.StrictMode>
+    );
+  </script>
+</body>
+</html>

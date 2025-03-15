@@ -5,7 +5,7 @@ interface ElectronAPI {
 
 // Check if running in Electron
 export const isElectron = (): boolean => {
-  return window && window.electron !== undefined;
+  return typeof window !== 'undefined' && window.electron !== undefined;
 };
 
 // Get the Electron API if available
@@ -29,11 +29,11 @@ export const getUserDataPath = async (): Promise<string | null> => {
 export const getApiBaseUrl = (): string => {
   if (isElectron()) {
     // In Electron production, use local server
-    if (process.env.NODE_ENV === 'production') {
+    if (import.meta.env.PROD) {
       return 'http://localhost:3000';
     }
   }
-  
+
   // In development or web version, use the provided API URL
   return import.meta.env.VITE_API_URL || '/api';
 };

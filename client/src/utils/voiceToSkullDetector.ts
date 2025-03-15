@@ -28,7 +28,9 @@ export function detectVoiceToSkull(
   }
 
   // Convert bin index to frequency
-  const binWidth = 44100 / (frequencyData.length * 2);
+  // Use default sample rate of 44100 Hz if not available
+  const sampleRate = (window.AudioContext || (window as any).webkitAudioContext)?.sampleRate || 44100;
+  const binWidth = sampleRate / (frequencyData.length * 2);
   const detectedFrequency = peakFrequency * binWidth;
 
   // Check if frequency is within V2K range
@@ -54,13 +56,19 @@ export function detectVoiceToSkull(
     (patternConfidence * 0.2)
   );
 
-  return {
+  const result = {
     detected: confidence >= V2K_THRESHOLD,
     confidence,
     frequency: detectedFrequency,
     signalStrength,
     pattern
   };
+
+  if (result.detected) {
+    handleHarmfulFrequency(result);
+  }
+
+  return result;
 }
 
 function analyzeV2KPattern(timeData: Float32Array): 'continuous' | 'pulsed' | 'modulated' | 'none' {

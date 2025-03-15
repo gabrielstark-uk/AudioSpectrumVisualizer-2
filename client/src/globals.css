@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --pure-white: #ffffff;
+  --deep-lavender: #7e5bef;
+  --macos-animation-duration: 0.3s;
+}
+
+@layer base {
+  html {
+    height: 100%;
+  }
+  
+  body {
+    height: 100%;
+    background: linear-gradient(to bottom right, var(--pure-white), var(--deep-lavender));
+    background-attachment: fixed;
+    animation: macos-fade-in var(--macos-animation-duration) ease-out;
+  }
+
+  @keyframes macos-fade-in {
+    0% {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .section {
+    padding: 2rem;
+    border-radius: 0.5rem;
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(1rem);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+    animation: macos-scale-in var(--macos-animation-duration) ease-out;
+  }
+
+  @keyframes macos-scale-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  button, input, select {
+    transition: all var(--macos-animation-duration) ease-out;
+  }
+
+  button:hover {
+    transform: scale(1.05);
+  }
+}

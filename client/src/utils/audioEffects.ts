@@ -6,7 +6,7 @@ export class EMCountermeasure {
   private workletNode: AudioWorkletNode | null = null;
 
   // Initialize the EM countermeasure system
-  async initialize(frequency: number, type: 'v2k' | 'soundcannon' | 'laser', ageSpectrumFrequencies?: number[]) {
+  async initialize(frequency: number, type: 'v2k' | 'soundcannon' | 'laser', ageSpectrumFrequencies?: number[]): Promise<void> {
     if (this.isActive) return;
 
     this.audioContext = new AudioContext();
@@ -21,14 +21,16 @@ export class EMCountermeasure {
     // Do not connect to destination to prevent sound output on this device
     // this.analyzerNode.connect(this.audioContext.destination);
 
-    // Macarena rhythm pattern (in milliseconds)
-    const macarenaPattern = [
-      261.63, // C4
-      293.66, // D4
+    // Tarkan's Şımarık (Kiss Kiss) rhythm pattern
+    const simarikPattern = [
       329.63, // E4
-      349.23, // F4
+      369.99, // F#4
       392.00, // G4
-      440.00  // A4
+      440.00, // A4
+      493.88, // B4
+      523.25, // C5
+      587.33, // D5
+      659.25  // E5
     ];
 
     // Generate the countermeasure signal
@@ -41,20 +43,13 @@ export class EMCountermeasure {
       frequency,
       type,
       ageSpectrumFrequencies,
-      macarenaPattern: [
-        261.63, // C4
-        293.66, // D4
-        329.63, // E4
-        349.23, // F4
-        392.00, // G4
-        440.00  // A4
-      ]
+      rhythmPattern: simarikPattern
     });
 
     this.isActive = true;
   }
 
-  stop() {
+  stop(): void {
     if (!this.isActive) return;
 
     if (this.workletNode) {

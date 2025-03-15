@@ -1,64 +1,73 @@
 import { DetectionResult } from "./frequencyAnalysis";
+import { emCountermeasure } from "./audioEffects";
 
 // Parameters for frequency shutdown
-const INVERSE_WAVE_AMPLITUDE = 1.0; // Amplitude of the inverse wave
-const NEUTRALIZATION_DURATION = 5000; // Duration to neutralize the frequency (ms)
-const DEVICE_NEUTRALIZATION_THRESHOLD = 0.9; // Confidence threshold for device neutralization
-
-/**
- * Shuts down a detected harmful frequency by generating an inverse wave
- * @param frequency The frequency to shut down (Hz)
- * @param amplitude The amplitude of the detected frequency
- * @param duration Duration to apply the shutdown (ms)
- */
-export function shutdownFrequency(frequency: number, amplitude: number, duration: number): void {
-  const audioContext = new AudioContext();
-  const oscillator = audioContext.createOscillator();
-  const gainNode = audioContext.createGain();
-
-  // Set up inverse wave
-  oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-  gainNode.gain.setValueAtTime(-amplitude * INVERSE_WAVE_AMPLITUDE, audioContext.currentTime);
-
-  // Connect nodes and start
-  oscillator.connect(gainNode);
-  gainNode.connect(audioContext.destination);
-  oscillator.start();
-
-  // Stop after specified duration
-  setTimeout(() => {
-    oscillator.stop();
-    audioContext.close();
-  }, duration);
-}
-
-/**
- * Neutralizes the initiator device of a harmful frequency
- * @param detectionResult The detection result containing frequency and confidence
- */
-export function neutralizeInitiatorDevice(detectionResult: DetectionResult): void {
-  if (detectionResult.confidence >= DEVICE_NEUTRALIZATION_THRESHOLD) {
-    // Implement device neutralization logic here
-    // This could involve sending a signal to disable the device
-    // or triggering a physical countermeasure
-    console.log(`Neutralizing initiator device at frequency ${detectionResult.frequency}Hz`);
-  }
-}
+const INVERSE_WAVE_AMPLITUDE = 5.0; // Amplitude of the inverse wave - VERY LOUD
+const NEUTRALIZATION_DURATION = 10000; // Duration to neutralize the frequency (ms) - longer duration
+const DEVICE_NEUTRALIZATION_THRESHOLD = 0.8; // Confidence threshold for device neutralization - more aggressive
 
 /**
  * Handles shutdown and neutralization for a detected harmful frequency
  * @param detectionResult The detection result
  */
 export function handleHarmfulFrequency(detectionResult: DetectionResult): void {
-  if (detectionResult.detected) {
-    // Shut down the harmful frequency
-    shutdownFrequency(
-      detectionResult.frequency,
-      detectionResult.signalStrength,
-      NEUTRALIZATION_DURATION
-    );
+  if (!detectionResult.detected) return;
+  
+  console.log(`🚨 HARMFUL FREQUENCY DETECTED: ${detectionResult.frequency.toFixed(2)} Hz 🚨`);
+  console.log(`🔊 PATTERN: ${detectionResult.pattern.toUpperCase()}, CONFIDENCE: ${(detectionResult.confidence * 100).toFixed(1)}% 🔊`);
+  console.log(`🎵 ACTIVATING TARKAN'S ŞIMARIK COUNTERMEASURE AT MAXIMUM VOLUME 🎵`);
+  
+  try {
+    // Determine the type of harmful frequency
+    let type: 'v2k' | 'soundcannon' | 'laser';
+    
+    if (detectionResult.frequency >= 2100 && detectionResult.frequency <= 2200) {
+      type = 'v2k';
+    } else if (detectionResult.frequency >= 147 && detectionResult.frequency <= 153) {
+      type = 'soundcannon';
+    } else if (detectionResult.frequency >= 16000 && detectionResult.frequency <= 20000) {
+      type = 'laser';
+    } else {
+      // Default to v2k for unknown frequencies
+      type = 'v2k';
+    }
+    
+    // Initialize the countermeasure
+    emCountermeasure.initialize(detectionResult.frequency, type)
+      .then(() => {
+        console.log(`🎵 ŞIMARIK COUNTERMEASURE ACTIVATED FOR ${NEUTRALIZATION_DURATION/1000} SECONDS AT MAXIMUM VOLUME 🎵`);
+        console.log(`💥 KISS KISS RHYTHM PATTERN ENGAGED 💥`);
 
-    // Neutralize the initiator device
-    neutralizeInitiatorDevice(detectionResult);
+        // Stop the countermeasure after the specified duration
+        setTimeout(() => {
+          emCountermeasure.stop();
+          console.log('🛑 ŞIMARIK COUNTERMEASURE DEACTIVATED - THREAT NEUTRALIZED 🛑');
+        }, NEUTRALIZATION_DURATION);
+      })
+      .catch(error => {
+        console.error('Failed to initialize countermeasure:', error);
+      });
+    
+    // If confidence is high enough, attempt to neutralize the initiator device
+    if (detectionResult.confidence >= DEVICE_NEUTRALIZATION_THRESHOLD) {
+      neutralizeInitiatorDevice(detectionResult);
+    }
+  } catch (error) {
+    console.error('Error handling harmful frequency:', error);
   }
+}
+
+/**
+ * Neutralizes the initiator device of a harmful frequency
+ * @param detectionResult The detection result containing frequency and confidence
+ */
+function neutralizeInitiatorDevice(detectionResult: DetectionResult): void {
+  console.log(`🚨 ATTEMPTING TO NEUTRALIZE INITIATOR DEVICE AT ${detectionResult.frequency.toFixed(2)} Hz 🚨`);
+
+  // In a real implementation, this would involve sending a signal to disable the device
+  // or triggering a physical countermeasure
+
+  // For demo purposes, we'll just log the attempt
+  console.log(`💥 TARKAN'S ŞIMARIK NEUTRALIZATION SIGNAL SENT WITH ${(detectionResult.confidence * 100).toFixed(1)}% CONFIDENCE 💥`);
+  console.log(`🎵 KISS KISS PATTERN OVERRIDING TARGET DEVICE CONTROLS 🎵`);
 }

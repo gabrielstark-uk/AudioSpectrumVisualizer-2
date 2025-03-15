@@ -59,7 +59,16 @@ async function getUserLocation(): Promise<{ lat: number, lon: number }> {
   });
 }
 
-async function sendReport(reportData: any): Promise<boolean> {
+interface ReportData {
+  timestamp: string;
+  location: { lat: number; lon: number };
+  frequency: number;
+  signalStrength: number;
+  pattern: string;
+  confidence: number;
+}
+
+async function sendReport(reportData: ReportData): Promise<boolean> {
   try {
     const response = await fetch(REPORT_URL, {
       method: 'POST',

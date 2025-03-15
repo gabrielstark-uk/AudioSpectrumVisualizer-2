@@ -1,140 +1,121 @@
-import React from 'react';
-import { SubscriptionStatus } from '../components/subscription/SubscriptionStatus';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
+import React from "react";
+import { NavBar } from "../components/NavBar";
 
-export default function AccountPage() {
+export default function Account() {
   return (
-    <div className="container mx-auto py-12">
-      <h1 className="text-3xl font-bold mb-8">Account Settings</h1>
-      
-      <Tabs defaultValue="subscription" className="max-w-4xl mx-auto">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="subscription">Subscription</TabsTrigger>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="billing">Billing History</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="subscription" className="mt-6">
-          <SubscriptionStatus />
-        </TabsContent>
-        
-        <TabsContent value="profile" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Information</CardTitle>
-              <CardDescription>
-                Update your account details and preferences.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="first-name">First Name</Label>
-                  <Input id="first-name" defaultValue="John" />
+    <div className="min-h-screen bg-background">
+      <NavBar />
+      <div className="container mx-auto p-4">
+        <h1 className="text-3xl font-bold mb-8">Account Settings</h1>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="md:col-span-2">
+            <div className="border rounded-lg p-6 shadow-sm mb-6">
+              <h2 className="text-xl font-bold mb-4">Profile Information</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Name</label>
+                  <input
+                    type="text"
+                    className="w-full p-2 border rounded-md"
+                    placeholder="Your Name"
+                    defaultValue="John Doe"
+                  />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="last-name">Last Name</Label>
-                  <Input id="last-name" defaultValue="Doe" />
+                <div>
+                  <label className="block text-sm font-medium mb-1">Email</label>
+                  <input
+                    type="email"
+                    className="w-full p-2 border rounded-md"
+                    placeholder="your@email.com"
+                    defaultValue="john.doe@example.com"
+                  />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Bio</label>
+                  <textarea
+                    className="w-full p-2 border rounded-md"
+                    rows={3}
+                    placeholder="Tell us about yourself"
+                    defaultValue="Audio engineer with 5 years of experience in sound design and frequency analysis."
+                  />
+                </div>
+                <button className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
+                  Save Changes
+                </button>
               </div>
-              
+            </div>
+
+            <div className="border rounded-lg p-6 shadow-sm">
+              <h2 className="text-xl font-bold mb-4">Security</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Current Password</label>
+                  <input
+                    type="password"
+                    className="w-full p-2 border rounded-md"
+                    placeholder="••••••••"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">New Password</label>
+                  <input
+                    type="password"
+                    className="w-full p-2 border rounded-md"
+                    placeholder="••••••••"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Confirm New Password</label>
+                  <input
+                    type="password"
+                    className="w-full p-2 border rounded-md"
+                    placeholder="••••••••"
+                  />
+                </div>
+                <button className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
+                  Update Password
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="border rounded-lg p-6 shadow-sm mb-6">
+              <h2 className="text-xl font-bold mb-4">Subscription</h2>
+              <div className="mb-4">
+                <div className="text-lg font-medium">Current Plan</div>
+                <div className="text-2xl font-bold text-primary">Professional</div>
+                <div className="text-sm text-muted-foreground">$9.99/month</div>
+              </div>
+              <div className="mb-4">
+                <div className="text-sm font-medium">Next billing date</div>
+                <div>June 15, 2023</div>
+              </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" defaultValue="john.doe@example.com" />
+                <button className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
+                  Upgrade Plan
+                </button>
+                <button className="w-full px-4 py-2 border border-destructive text-destructive rounded-md hover:bg-destructive/10">
+                  Cancel Subscription
+                </button>
               </div>
-              
+            </div>
+
+            <div className="border rounded-lg p-6 shadow-sm">
+              <h2 className="text-xl font-bold mb-4">Account Actions</h2>
               <div className="space-y-2">
-                <Label htmlFor="company">Company (Optional)</Label>
-                <Input id="company" />
+                <button className="w-full px-4 py-2 border rounded-md hover:bg-muted">
+                  Download My Data
+                </button>
+                <button className="w-full px-4 py-2 border border-destructive text-destructive rounded-md hover:bg-destructive/10">
+                  Delete Account
+                </button>
               </div>
-              
-              <div className="pt-4">
-                <Button>Save Changes</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="billing" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Billing History</CardTitle>
-              <CardDescription>
-                View your past invoices and payment history.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Description
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Amount
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Invoice
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    <tr>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        May 1, 2024
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        Professional Plan (Monthly)
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        $9.99
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                          Paid
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
-                        <a href="#">Download</a>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        April 1, 2024
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        Professional Plan (Monthly)
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        $9.99
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                          Paid
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
-                        <a href="#">Download</a>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

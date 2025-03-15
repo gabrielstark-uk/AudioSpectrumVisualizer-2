@@ -1,12 +1,12 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import React, { useState } from "react";
+import { Button } from "./ui/button";
+import { Card, CardContent } from "./ui/card";
 import { Mic, MicOff } from "lucide-react";
 import { FrequencySpectrum } from "./FrequencySpectrum";
 import { WaveformVisualizer } from "./WaveformVisualizer";
 import { VolumeIndicator } from "./VolumeIndicator";
 import { DetectionDisplay } from "./DetectionDisplay";
-import { useAudioAnalyzer } from "@/hooks/useAudioAnalyzer";
+import { useAudioAnalyzer } from "../hooks/useAudioAnalyzer";
 
 export function AudioAnalyzer() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);

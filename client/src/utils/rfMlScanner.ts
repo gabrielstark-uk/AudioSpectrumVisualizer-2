@@ -1,7 +1,7 @@
 import { DetectionResult } from "./frequencyAnalysis";
 
 export class RFChipDetector {
-  private model: any;
+  private model: unknown;
   private isInitialized = false;
 
   async initialize(): Promise<void> {

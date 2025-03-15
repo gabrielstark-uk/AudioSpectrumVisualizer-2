@@ -1,0 +1,11 @@
+.volume-indicator {
+  width: 100%;
+}
+
+.volume-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
