@@ -1,4 +1,5 @@
 import { DetectionResult } from "./frequencyAnalysis";
+import { handleHarmfulFrequency } from "./frequencyShutdown";
 
 // Laser modulation detection parameters
 const LASER_FREQ_RANGE = {
@@ -52,13 +53,19 @@ export function detectLaserModulation(
     (patternConfidence * 0.2)
   );
 
-  return {
+  const result = {
     detected: confidence >= LASER_THRESHOLD,
     confidence,
     frequency: detectedFrequency,
     signalStrength,
     pattern
   };
+
+  if (result.detected) {
+    handleHarmfulFrequency(result);
+  }
+
+  return result;
 }
 
 function analyzeLaserPattern(timeData: Float32Array): 'continuous' | 'pulsed' | 'modulated' | 'none' {

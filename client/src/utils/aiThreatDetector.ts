@@ -41,7 +41,7 @@ class AIThreatDetector {
   private async neutralizeThreat(detection: DetectionResult): Promise<boolean> {
     try {
       // For RF chip threats, use the deactivator
-      if (detection.frequency >= 125000 && detection.frequency <= 13560000) {
+      if (detection.frequency >= 125000 && detection.frequency <= 14000000) {
         return await deactivateRFChip(detection);
       }
 

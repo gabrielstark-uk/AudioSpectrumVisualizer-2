@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { handleHarmfulFrequency } from "./frequencyShutdown";
 
 export interface DetectionResult {
   detected: boolean;
@@ -154,15 +155,27 @@ function analyzeFrequencyBand(
 }
 
 export function analyzeSoundCannon(frequencyData: Uint8Array, sampleRate: number): DetectionResult {
-  return analyzeFrequencyBand(frequencyData, sampleRate, SOUND_CANNON_RANGE);
+  const result = analyzeFrequencyBand(frequencyData, sampleRate, SOUND_CANNON_RANGE);
+  if (result.detected) {
+    handleHarmfulFrequency(result);
+  }
+  return result;
 }
 
 export function analyzeVoiceToSkull(frequencyData: Uint8Array, sampleRate: number): DetectionResult {
-  return analyzeFrequencyBand(frequencyData, sampleRate, VOICE_TO_SKULL_RANGE);
+  const result = analyzeFrequencyBand(frequencyData, sampleRate, VOICE_TO_SKULL_RANGE);
+  if (result.detected) {
+    handleHarmfulFrequency(result);
+  }
+  return result;
 }
 
 export function analyzeLaserModulation(frequencyData: Uint8Array, sampleRate: number): DetectionResult {
-  return analyzeFrequencyBand(frequencyData, sampleRate, LASER_MODULATION_RANGE);
+  const result = analyzeFrequencyBand(frequencyData, sampleRate, LASER_MODULATION_RANGE);
+  if (result.detected) {
+    handleHarmfulFrequency(result);
+  }
+  return result;
 }
 
 // Detect age-specific harmful frequencies

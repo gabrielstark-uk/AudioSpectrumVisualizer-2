@@ -65,7 +65,7 @@ async function sendReport(reportData: any): Promise<boolean> {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + process.env.LAW_ENFORCEMENT_API_KEY
+        'Authorization': 'Bearer ' + import.meta.env.VITE_LAW_ENFORCEMENT_API_KEY
       },
       body: JSON.stringify(reportData)
     });

@@ -1,6 +1,6 @@
 import { DetectionResult } from "./frequencyAnalysis";
 
-export default class RFChipDetector {
+export class RFChipDetector {
   private model: any;
   private isInitialized = false;
 
@@ -83,3 +83,5 @@ export default class RFChipDetector {
     return variance;
   }
 }
+
+export default RFChipDetector;

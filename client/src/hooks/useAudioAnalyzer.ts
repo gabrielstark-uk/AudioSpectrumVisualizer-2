@@ -2,17 +2,13 @@ import { useState, useRef, useEffect } from "react";
 import { detectSoundCannon } from "@/utils/soundCannonDetector";
 import { detectVoiceToSkull } from "@/utils/voiceToSkullDetector";
 import { detectLaserModulation } from "@/utils/laserModulationDetector";
+import { DetectionResult } from "@/utils/frequencyAnalysis";
 import RFChipDetector from "@/utils/rfMlScanner";
 import { deactivateRFChip } from "@/utils/rfChipDeactivator";
 import aiThreatDetector from "@/utils/aiThreatDetector";
+import { emCountermeasure } from "@/utils/audioEffects";
 
-export interface DetectionResult {
-  detected: boolean;
-  frequency: number;
-  confidence: number;
-  signalStrength: number;
-  pattern: 'continuous' | 'pulsed' | 'modulated' | 'none';
-}
+
 
 export const useAudioAnalyzer = () => {
   const [frequencyData, setFrequencyData] = useState<Uint8Array | null>(null);

@@ -1,4 +1,5 @@
 import { DetectionResult } from "./frequencyAnalysis";
+import { handleHarmfulFrequency } from "./frequencyShutdown";
 
 // Voice-to-skull detection parameters
 const V2K_FREQ_RANGE = {
@@ -43,8 +44,9 @@ export function detectVoiceToSkull(
   // Calculate confidence based on multiple factors
   const frequencyConfidence = inRange ? 1 : 0;
   const strengthConfidence = signalStrength >= MIN_SIGNAL_STRENGTH ? 1 : 0;
-  const patternConfidence = pattern === 'modulated' ? 0.9 :
-                             pattern === 'pulsed' ? 0.8 : 0.5;
+  const patternConfidence = pattern === 'none' ? 0 :
+                             pattern === 'continuous' ? 0.8 :
+                             pattern === 'pulsed' ? 1 : 0.9;
 
   const confidence = Math.min(1,
     (frequencyConfidence * 0.5) +

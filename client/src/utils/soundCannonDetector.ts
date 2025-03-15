@@ -1,4 +1,5 @@
 import { DetectionResult } from "./frequencyAnalysis";
+import { handleHarmfulFrequency } from "./frequencyShutdown";
 
 // Sound cannon detection parameters
 const SOUND_CANNON_FREQ_RANGE = {
@@ -52,13 +53,19 @@ export function detectSoundCannon(
     (patternConfidence * 0.3)
   );
 
-  return {
+  const result = {
     detected: confidence >= SOUND_CANNON_THRESHOLD,
     confidence,
     frequency: detectedFrequency,
     signalStrength,
     pattern
   };
+
+  if (result.detected) {
+    handleHarmfulFrequency(result);
+  }
+
+  return result;
 }
 
 function analyzeSoundCannonPattern(timeData: Float32Array): 'continuous' | 'pulsed' | 'modulated' | 'none' {
